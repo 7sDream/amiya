@@ -1,24 +1,27 @@
 use {
+    amiya::{middleware::BoxedResultFut, Amiya, Context},
+    futures::future,
     smol,
-    futures,
-    http_types::Request,
-    amiya::{AmiyaBuilder, BoxedNextFunc, BoxedRespFut},
 };
 
- fn log(req: Request, next: BoxedNextFunc<'_>) -> BoxedRespFut {
-     Box::pin(async {
-         println!("Request {} from {}", req.url(), req.remote().unwrap_or("unknown address"));
-         let resp = next(req).await;
-         if let Err(err) = resp.as_ref() {
-             eprintln!("Request process error: {}", err);
-         }
-         resp
-     })
+fn log(ctx: Context<'_>) -> BoxedResultFut {
+    Box::pin(async {
+        println!(
+            "Request {} from {}",
+            ctx.req.url(),
+            ctx.req.remote().unwrap_or("unknown address")
+        );
+        let resp = ctx.next().await;
+        if let Err(err) = resp.as_ref() {
+            eprintln!("Request process error: {}", err);
+        }
+        resp
+    })
 }
 
-fn response(req: Request, next: BoxedNextFunc<'_>) -> BoxedRespFut {
+fn response(ctx: Context<'_>) -> BoxedResultFut {
     Box::pin(async {
-        let mut resp = next(req).await;
+        let mut resp = ctx.next().await;
         if let Ok(ref mut resp) = resp {
             resp.set_body("Hello from Amiya!");
         }
@@ -27,14 +30,11 @@ fn response(req: Request, next: BoxedNextFunc<'_>) -> BoxedRespFut {
 }
 
 fn main() {
-    for _ in 0 .. num_cpus::get().max(1) {
-        std::thread::spawn(|| smol::run(futures::future::pending::<()>()));
+    for _ in 0..num_cpus::get().max(1) {
+        std::thread::spawn(|| smol::run(future::pending::<()>()));
     }
 
-    let amiya = AmiyaBuilder::default()
-        .uses(log)
-        .uses(response)
-        .build();
+    let amiya = Amiya::default().uses(log).uses(response);
 
     smol::block_on(amiya.listen("[::]:8080")).unwrap();
 }
