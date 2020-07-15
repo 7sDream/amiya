@@ -1,3 +1,8 @@
+#![deny(warnings)]
+#![deny(clippy::all, clippy::pedantic, clippy::nursery)]
+#![deny(missing_debug_implementations, rust_2018_idioms)]
+#![allow(clippy::module_name_repetitions)]
+
 mod context;
 pub mod middleware;
 
@@ -21,6 +26,7 @@ pub type Result<T = Response> = http_types::Result<T>;
 
 type MiddlewareList = Vec<Arc<dyn Middleware>>;
 
+#[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct Amiya {
     middleware_list: MiddlewareList,

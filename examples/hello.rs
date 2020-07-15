@@ -4,7 +4,7 @@ use {
     smol,
 };
 
-fn log(ctx: Context<'_>) -> BoxedResultFut {
+fn log(ctx: Context<'_>) -> BoxedResultFut<'_> {
     Box::pin(async {
         println!(
             "Request {} from {}",
@@ -19,7 +19,7 @@ fn log(ctx: Context<'_>) -> BoxedResultFut {
     })
 }
 
-fn response(ctx: Context<'_>) -> BoxedResultFut {
+fn response(ctx: Context<'_>) -> BoxedResultFut<'_> {
     Box::pin(async {
         let mut resp = ctx.next().await;
         if let Ok(ref mut resp) = resp {

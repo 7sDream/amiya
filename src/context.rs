@@ -3,6 +3,7 @@ use {
     std::sync::Arc,
 };
 
+#[allow(missing_debug_implementations)]
 pub struct Context<'x> {
     pub req: Request,
     pub(crate) tail: &'x [Arc<dyn Middleware>],
