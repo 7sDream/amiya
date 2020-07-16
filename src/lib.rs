@@ -22,25 +22,31 @@ pub use {
     http_types::{Request, Response, StatusCode},
 };
 
-pub type Result<T = Response> = http_types::Result<T>;
+pub type Result<T = ()> = http_types::Result<T>;
 
-type MiddlewareList = Vec<Arc<dyn Middleware>>;
+type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
-pub struct Amiya {
-    middleware_list: MiddlewareList,
+pub struct Amiya<Ex = ()> {
+    middleware_list: MiddlewareList<Ex>,
 }
 
-impl Amiya {
-    pub fn uses<M: Middleware + 'static>(mut self, middleware: M) -> Self {
+impl<Ex> Amiya<Ex>
+where
+    Ex: Default + Send + Sync + 'static,
+{
+    pub fn uses<M: Middleware<Ex> + 'static>(mut self, middleware: M) -> Self {
         self.middleware_list.push(Arc::new(middleware));
         self
     }
 
-    async fn serve(tail: Arc<MiddlewareList>, req: Request) -> Result {
-        let ctx = Context { req, tail: &tail };
-        ctx.next().await
+    async fn serve(tail: Arc<MiddlewareList<Ex>>, mut req: Request) -> Result<Response> {
+        let mut ex = Ex::default();
+        let mut resp = Response::new(StatusCode::Ok);
+        let mut ctx = Context { req: &mut req, resp: &mut resp, ex: &mut ex, tail: &tail };
+        ctx.next().await?;
+        Ok(resp)
     }
 
     pub async fn listen<A: ToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
