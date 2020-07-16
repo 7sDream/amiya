@@ -55,8 +55,8 @@ Log:
 
 ```bash
 $ cargo run --release --example taste
-$ new request
-$ finish, response is: Hello World!
+new request
+finish, response is: Hello World!
 ```
 
 Curl:
