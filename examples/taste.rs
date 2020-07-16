@@ -10,7 +10,7 @@ fn main() {
         std::thread::spawn(|| smol::run(future::pending::<()>()));
     }
 
-    // Middleware is onion mode, just as NodeJs's koa framework.
+    // Middleware is onion model, just as NodeJs's koa framework.
     // The executed order is:
     //   - `Logger`'s code before `next()`, which print a log about request in
     //   - `Respond`'s code before `next()`, which do nothing
