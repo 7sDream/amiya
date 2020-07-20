@@ -4,7 +4,7 @@ use amiya::{m, Amiya};
 
 fn main() {
     // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
-    common::start_smol_workers();
+    let ex = common::global_executor();
 
     // Middleware is onion model, just as NodeJs's koa framework.
     // The executed order is:
@@ -32,5 +32,5 @@ fn main() {
             Ok(())
         }));
 
-    smol::block_on(amiya.listen("[::]:8080")).unwrap();
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }

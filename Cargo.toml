@@ -5,10 +5,14 @@ authors = ["7sDream <i@7sdre.am>"]
 edition = "2018"
 
 [dependencies]
-smol = "0.1"
-num_cpus = "1"
-async-dup = "1"
+smol = "0.2"
+async-net = "0.1"
 http-types = "2"
-futures = "0.3"
 async-h1 = "2"
 async-trait = "0.1"
+
+[dev-dependencies]
+multitask = "0.2"
+blocking = "0.4"
+num_cpus = "1"
+parking = "1"

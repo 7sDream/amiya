@@ -1,13 +1,23 @@
 use {
     amiya::{Context, Result},
-    futures::future,
-    smol,
+    multitask::Executor,
 };
 
-pub fn start_smol_workers() {
+pub fn global_executor() -> Executor {
+    let ex = Executor::new();
+
+    // Create two executor threads.
     for _ in 0..num_cpus::get().max(1) {
-        std::thread::spawn(|| smol::run(future::pending::<()>()));
+        let (p, u) = parking::pair();
+        let ticker = ex.ticker(move || u.unpark());
+        std::thread::spawn(move || loop {
+            if !ticker.tick() {
+                p.park();
+            }
+        });
     }
+
+    ex
 }
 
 #[allow(dead_code)]

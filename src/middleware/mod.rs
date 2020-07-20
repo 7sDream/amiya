@@ -3,12 +3,12 @@ pub mod router;
 use {
     crate::{Context, Result},
     async_trait::async_trait,
-    futures::future::BoxFuture,
+    std::{future::Future, pin::Pin},
 };
 
 pub use router::{MethodRouter, Router};
 
-pub type BoxedResultFut<'x> = BoxFuture<'x, Result>;
+pub type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
 
 #[async_trait]
 pub trait Middleware<Ex>: Send + Sync {

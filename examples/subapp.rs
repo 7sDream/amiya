@@ -6,7 +6,7 @@ use {
 };
 
 fn main() {
-    common::start_smol_workers();
+    let ex = common::global_executor();
 
     let api_server = Router::default().sub_router("v1", |v1| {
         v1.sub_endpoint_by_method(
@@ -39,5 +39,5 @@ fn main() {
             .sub_middleware("static", static_files_server),
     );
 
-    smol::block_on(amiya.listen("[::]:8080")).unwrap();
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }

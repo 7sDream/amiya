@@ -7,15 +7,10 @@ mod context;
 pub mod middleware;
 
 use {
+    async_net::{AsyncToSocketAddrs, TcpListener},
     async_trait::async_trait,
     middleware::Middleware,
-    smol::Async,
-    std::{
-        fmt::Debug,
-        io,
-        net::{TcpListener, ToSocketAddrs},
-        sync::Arc,
-    },
+    std::{fmt::Debug, io, sync::Arc},
 };
 
 pub use {
@@ -56,19 +51,13 @@ where
         Ok(resp)
     }
 
-    pub async fn listen<A: ToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
-        let addr = addr.to_socket_addrs()?.next().ok_or(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Empty socket address: {:?}", addr),
-        ))?;
-
-        let listener = Async::<TcpListener>::bind(addr)?;
+    pub async fn listen<A: AsyncToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
+        let listener = TcpListener::bind(addr).await?;
         let middleware_list = Arc::new(self.middleware_list);
 
         loop {
             match listener.accept().await {
                 Ok((stream, client_addr)) => {
-                    let stream = async_dup::Arc::new(stream);
                     let middleware_list = Arc::clone(&middleware_list);
                     let serve = async_h1::accept(stream, move |mut req| {
                         req.set_peer_addr(Some(client_addr));
@@ -86,10 +75,6 @@ where
                 }
             }
         }
-    }
-
-    pub fn listen_block<A: ToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
-        smol::block_on(self.listen(addr))
     }
 }
 

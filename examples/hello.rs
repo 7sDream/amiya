@@ -9,7 +9,7 @@ struct ExData {
 }
 
 fn main() {
-    common::start_smol_workers();
+    let ex = common::global_executor();
 
     let amiya = Amiya::default()
         // Amiya support extra data attach in context, just set it's type as second argument
@@ -37,5 +37,5 @@ fn main() {
             Ok(())
         }));
 
-    amiya.listen_block("[::]:8080").unwrap();
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap()
 }

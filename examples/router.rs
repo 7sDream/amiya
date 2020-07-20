@@ -6,7 +6,7 @@ use {
 };
 
 fn main() {
-    common::start_smol_workers();
+    let ex = common::global_executor();
 
     let router = Router::default()
         // sub endpoint will be executed if and only if the remain path is exactly  
@@ -23,5 +23,5 @@ fn main() {
 
     let amiya = Amiya::default().uses(router);
 
-    amiya.listen_block("[::]:8080").unwrap();
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }
