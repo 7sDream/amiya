@@ -1,6 +1,6 @@
 # Amiya
 
-Yet another **experimental** middleware-based minimalism async HTTP server framework, most API design learned from Tide.
+Yet another **experimental** middleware-based minimalism async HTTP server framework.
 
 Working in progress, just alpha stage now, missing many features.
 
@@ -15,7 +15,7 @@ use amiya::{m, Amiya};
 
 fn main() {
     // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
-    common::start_smol_workers();
+    let ex = common::global_executor();
 
     // Middleware is onion model, just as NodeJs's koa framework.
     // The executed order is:
@@ -43,7 +43,7 @@ fn main() {
             Ok(())
         }));
 
-    smol::block_on(amiya.listen("[::]:8080")).unwrap();
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }
 ```
 
@@ -82,4 +82,4 @@ See `examples` folder for more example with comments.
 
 ## License
 
-UNLICENSED.
+BSD 3-Clause Clear License, See `LICENSE`.
