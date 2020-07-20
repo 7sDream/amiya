@@ -1,29 +1,27 @@
+mod common;
+
 use {
-    amiya::{middleware::Router, new_middleware, Amiya, Context, Result},
-    futures::future,
-    smol,
+    amiya::{m, middleware::Router, Amiya},
+    common::response,
 };
 
-async fn response(mut ctx: Context<'_, ()>, data: &'static str) -> Result {
-    ctx.next().await?;
-    ctx.resp.set_body(data);
-    Ok(())
-}
-
 fn main() {
-    for _ in 0..num_cpus::get().max(1) {
-        std::thread::spawn(|| smol::run(future::pending::<()>()));
-    }
+    common::start_smol_workers();
 
-    let amiya = Amiya::default()
-        // Amiya support extra data attach in context, just set it's type as second argument
-        .uses(Router::default()
-            .route("api").route(|api| {
-                api.route("v1").route(|v1| {
-                    v1.route("hello").uses(new_middleware!(ctx, (), {
-                        response(ctx, "from hello").await
-                    }))
+    let router = Router::default()
+        // sub endpoint will be executed if and only if the remain path is exactly  
+        .sub_endpoint("api/v1/hello", m!(ctx => response("Call version 1 hello API\n", ctx).await))
+        .sub_router("statics", |statics| {
+            statics
+                .endpoint(m!(ctx => response("We do not allow list dir\n", ctx).await))
+                // fallback will execute if and only if not not exactly meets and no item in router table matches
+                // That is, all sub path do not exist in router table
+                .fallback_by_method_router(|files| {
+                    files.get(m!(ctx => response(format!("Get file {}\n", ctx.remain_path()), ctx).await))
                 })
-        }));
-    smol::block_on(amiya.listen("[::]:8080")).unwrap();
+        });
+
+    let amiya = Amiya::default().uses(router);
+
+    amiya.listen_block("[::]:8080").unwrap();
 }

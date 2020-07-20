@@ -6,7 +6,7 @@ use {
     futures::future::BoxFuture,
 };
 
-pub use router::Router;
+pub use router::{MethodRouter, Router};
 
 pub type BoxedResultFut<'x> = BoxFuture<'x, Result>;
 
@@ -42,12 +42,12 @@ where
 }
 
 #[macro_export]
-macro_rules! new_middleware {
+macro_rules! m {
     ($func: ident) => {
         $crate::middleware::Custom { func: Box::new(|ctx| Box::pin($func(ctx))) }
     };
 
-    ($ctx: ident, $ex: ty, $body: block ) => {
+    ($ctx: ident : $ex: ty => $body: block ) => {
         $crate::middleware::Custom {
             func: Box::new(move |mut $ctx: $crate::Context<'_, $ex>| {
                 Box::pin(async move { $body })
@@ -55,7 +55,16 @@ macro_rules! new_middleware {
         }
     };
 
-    ($ctx: ident, $body: block ) => {
-        new_middleware!($ctx, _, $body)
+    ($ctx: ident : $ex: ty => $body: expr ) => {
+        m!($ctx: $ex => { $body })
     };
+
+    ($ctx: ident => $body: block) => {
+        m!($ctx: () => $body)
+    };
+
+    ($ctx: ident => $body: expr) => {
+        m!($ctx: () => { $body })
+    };
+
 }

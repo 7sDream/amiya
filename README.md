@@ -9,17 +9,13 @@ Working in progress, just alpha stage now, missing many features.
 Code:
 
 ```rust
-use {
-    amiya::{new_middleware, Amiya},
-    futures::future,
-    smol,
-};
+mod common;
+
+use amiya::{m, Amiya};
 
 fn main() {
-    // Start async worker threads pre cpu core
-    for _ in 0..num_cpus::get().max(1) {
-        std::thread::spawn(|| smol::run(future::pending::<()>()));
-    }
+    // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
+    common::start_smol_workers();
 
     // Middleware is onion model, just as NodeJs's koa framework.
     // The executed order is:
@@ -27,11 +23,11 @@ fn main() {
     //   - `Respond`'s code before `next()`, which do nothing
     //   - `Respond`'s code after `next()`, which set the response body
     //   - `Logger`'s code after `next()`, which read the response body and log it
-    let amiya = Amiya::<()>::default()
+    let amiya = Amiya::default()
         // Let's call This middleware `Logger`
         // `ctx.next().await` will return after all inner middleware be executed
         // so the `content` will be "Hello World" , which is set by next middleware.
-        .uses(new_middleware!(ctx, {
+        .uses(m!(ctx => {
             println!("new request at");
             ctx.next().await?;
             let content = ctx.resp.take_body().into_string().await.unwrap();
@@ -41,7 +37,7 @@ fn main() {
         }))
         // Let's call This middleware `Respond`
         // This middleware set tht response
-        .uses(new_middleware!(ctx, {
+        .uses(m!(ctx => {
             ctx.next().await?;
             ctx.resp.set_body("Hello World!");
             Ok(())

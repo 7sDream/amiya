@@ -1,8 +1,6 @@
-use {
-    amiya::{new_middleware, Amiya},
-    futures::future,
-    smol,
-};
+use amiya::{m, Amiya};
+
+mod common;
 
 // Extra data of Amiya must be Default + Send + Sync, and can't contain reference
 #[derive(Default)]
@@ -11,13 +9,11 @@ struct ExData {
 }
 
 fn main() {
-    for _ in 0..num_cpus::get().max(1) {
-        std::thread::spawn(|| smol::run(future::pending::<()>()));
-    }
+    common::start_smol_workers();
 
     let amiya = Amiya::default()
         // Amiya support extra data attach in context, just set it's type as second argument
-        .uses(new_middleware!(ctx, ExData, {
+        .uses(m!(ctx: ExData => {
             println!(
                 "Request {} from {}",
                 ctx.req.url(),
@@ -31,7 +27,7 @@ fn main() {
             }
             result
         }))
-        .uses(new_middleware!(ctx, ExData, {
+        .uses(m!(ctx: ExData => {
             ctx.next().await?;
             ctx.resp.set_body("Hello from Amiya!");
             // get message set by other middleware and use it 
@@ -41,5 +37,5 @@ fn main() {
             Ok(())
         }));
 
-    smol::block_on(amiya.listen("[::]:8080")).unwrap();
+    amiya.listen_block("[::]:8080").unwrap();
 }

@@ -7,6 +7,7 @@ mod context;
 pub mod middleware;
 
 use {
+    async_trait::async_trait,
     middleware::Middleware,
     smol::Async,
     std::{
@@ -19,7 +20,7 @@ use {
 
 pub use {
     context::Context,
-    http_types::{Request, Response, StatusCode},
+    http_types::{Method, Request, Response, StatusCode},
 };
 
 pub type Result<T = ()> = http_types::Result<T>;
@@ -41,10 +42,16 @@ where
         self
     }
 
-    async fn serve(tail: Arc<MiddlewareList<Ex>>, mut req: Request) -> Result<Response> {
+    async fn serve(tail: Arc<MiddlewareList<Ex>>, req: Request) -> Result<Response> {
         let mut ex = Ex::default();
         let mut resp = Response::new(StatusCode::Ok);
-        let mut ctx = Context { req: &mut req, resp: &mut resp, ex: &mut ex, tail: &tail };
+        let mut ctx = Context {
+            req: &req,
+            resp: &mut resp,
+            ex: &mut ex,
+            tail: &tail,
+            remain_path: &req.url().path()[1..],
+        };
         ctx.next().await?;
         Ok(resp)
     }
@@ -79,5 +86,24 @@ where
                 }
             }
         }
+    }
+
+    pub fn listen_block<A: ToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
+        smol::block_on(self.listen(addr))
+    }
+}
+
+#[async_trait]
+impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
+    async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result<()> {
+        let mut self_ctx = Context {
+            req: ctx.req,
+            resp: ctx.resp,
+            ex: ctx.ex,
+            tail: &self.middleware_list[..],
+            remain_path: &ctx.remain_path,
+        };
+        self_ctx.next().await?;
+        ctx.next().await
     }
 }
