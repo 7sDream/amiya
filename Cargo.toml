@@ -8,6 +8,9 @@ edition = "2018"
 smol = "0.2"
 async-net = "0.1"
 http-types = "2"
+# TODO: async-h1 now use async-std, which use smol older 0.1.18 version,
+#       this make a huge dep dependence and something like recursive dependence,
+#       it doesn't lead to problem for now, but we better recheck this issue before publish
 async-h1 = "2"
 async-trait = "0.1"
 
