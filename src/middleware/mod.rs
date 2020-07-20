@@ -1,8 +1,12 @@
+pub mod router;
+
 use {
     crate::{Context, Result},
     async_trait::async_trait,
     futures::future::BoxFuture,
 };
+
+pub use router::Router;
 
 pub type BoxedResultFut<'x> = BoxFuture<'x, Result>;
 
@@ -55,8 +59,3 @@ macro_rules! new_middleware {
         new_middleware!($ctx, _, $body)
     };
 }
-//
-// fn test() -> BoxFuture<'static, String> {
-//     let x = Box::new(move || Box::pin(async move { String::from("xx") }));
-//     x
-// }
