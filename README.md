@@ -82,10 +82,15 @@ Hello World!
 
 See `examples` folder for more example with comments.
 
-- `example/extra.rs` for how to store extra data in context
-- `example/router.rs` for how to Use `Router` middleware
-- `example/subap.rs` for use another `Amiya` as a middleware
+- [`examples/extra.rs`][example:extra] for how to store extra data in context
+- [`examples/router.rs`][example:router] for how to Use `Router` middleware
+- [`examples/subapp.rs`][example:subapp] for use another `Amiya` as a middleware
 
 ## License
 
-BSD 3-Clause Clear License, See `LICENSE`.
+BSD 3-Clause Clear License, See [`LICENSE`][license].
+
+[example:extra]: https://github.com/7sDream/amiya/blob/master/examples/extra.md
+[example:router]: https://github.com/7sDream/amiya/blob/master/examples/router.md
+[example:subapp]: https://github.com/7sDream/amiya/blob/master/examples/subapp.md
+[license]: https://github.com/7sDream/amiya/blob/master/LICENSE
