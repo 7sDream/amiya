@@ -8,7 +8,7 @@ use {
 
 pub use router::{router, MethodRouter, Router};
 
-pub type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
+type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
 
 #[async_trait]
 pub trait Middleware<Ex>: Send + Sync {
