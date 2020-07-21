@@ -32,7 +32,7 @@ where
         }
     }
 
-    pub fn remain_path(&self) -> &str {
+    pub fn path(&self) -> &str {
         self.remain_path
     }
 }
