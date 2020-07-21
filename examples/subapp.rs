@@ -16,14 +16,12 @@ fn main() {
     let api_server = Router::default()
         .at("v1")
             .at("login")
-                .endpoint()
-                .get(m!(ctx => response("Login V1 called\n", ctx).await))
-            .done()
+                .endpoint().get(m!(ctx => response("Login V1 called\n", ctx).await))
+                .done()
             .at("logout")
-                .endpoint()
-                .get(m!(ctx => response("Logout V1 called\n", ctx).await))
-            .done()
-        .done();
+                .endpoint().get(m!(ctx => response("Logout V1 called\n", ctx).await))
+                .done()
+            .done();
 
     let static_files_server = Amiya::default()
         .uses(m!(ctx => {
