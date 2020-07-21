@@ -1,5 +1,7 @@
 mod common;
 
+// m is a macro to let you easily write middleware use closure like Javascript's arrow function
+// it can also convert a async fn to a middleware use the `m!(async_func_name)` syntax.
 use amiya::{m, Amiya};
 
 fn main() {
