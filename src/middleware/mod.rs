@@ -6,7 +6,7 @@ use {
     std::{future::Future, pin::Pin},
 };
 
-pub use router::{MethodRouter, Router};
+pub use router::{router, MethodRouter, Router};
 
 pub type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
 
@@ -44,6 +44,7 @@ where
 #[macro_export]
 macro_rules! m {
     // Convert a async function to middleware by func's name
+
     ($func: ident) => {
         $crate::middleware::Custom { func: Box::new(|ctx| Box::pin($func(ctx))) }
     };

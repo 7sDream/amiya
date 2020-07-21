@@ -22,28 +22,41 @@ pub type Result<T = ()> = http_types::Result<T>;
 
 type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 
-pub fn new<Ex>() -> Amiya<Ex>
-where
-    Ex: Default,
-{
-    Amiya::<Ex>::default()
+pub fn new<Ex>() -> Amiya<Ex> {
+    Amiya::default()
 }
 
 #[allow(missing_debug_implementations)]
-#[derive(Default)]
 pub struct Amiya<Ex = ()> {
     middleware_list: MiddlewareList<Ex>,
+}
+
+impl<Ex> Default for Amiya<Ex> {
+    fn default() -> Self {
+        Self { middleware_list: vec![] }
+    }
+}
+
+impl<Ex> Amiya<Ex> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl<Ex> Amiya<Ex>
+where
+    Ex: Send + Sync + 'static,
+{
+    pub fn uses<M: Middleware<Ex> + 'static>(mut self, middleware: M) -> Self {
+        self.middleware_list.push(Arc::new(middleware));
+        self
+    }
 }
 
 impl<Ex> Amiya<Ex>
 where
     Ex: Default + Send + Sync + 'static,
 {
-    pub fn uses<M: Middleware<Ex> + 'static>(mut self, middleware: M) -> Self {
-        self.middleware_list.push(Arc::new(middleware));
-        self
-    }
-
     async fn serve(tail: Arc<MiddlewareList<Ex>>, req: Request) -> Result<Response> {
         let mut ex = Ex::default();
         let mut resp = Response::new(StatusCode::Ok);

@@ -145,8 +145,8 @@ macro_rules! impl_router_like_pub_fn {
 
         pub fn at<P: Into<Cow<'static, str>>>(
             self, path: P,
-        ) -> RouterSetter<Self, SetToRouterTable, $ex> {
-            RouterSetter::new_router_table_setter(self, path)
+        ) -> RouterSetter<RouterSetter<Self, SetToRouterTable, $ex>, SetToEndpoint, $ex> {
+            RouterSetter::new_router_table_setter(self, path).endpoint()
         }
 
         pub fn fallback(self) -> RouterSetter<Self, SetToFallback, $ex> {
@@ -185,7 +185,15 @@ impl<Ex> RouterLike<Ex> for Router<Ex> {
 }
 
 impl<Ex> Router<Ex> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     impl_router_like_pub_fn! { Ex }
+}
+
+pub fn router<Ex>() -> Router<Ex> {
+    Router::default()
 }
 
 #[async_trait]
@@ -351,6 +359,32 @@ where
     }
 }
 
+impl<R, Ex> RouterSetter<RouterSetter<R, SetToRouterTable, Ex>, SetToEndpoint, Ex>
+where
+    R: RouterLike<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    pub fn fallback(
+        self,
+    ) -> RouterSetter<RouterSetter<R, SetToRouterTable, Ex>, SetToFallback, Ex> {
+        self.router.fallback()
+    }
+
+    pub fn at<P: Into<Cow<'static, str>>>(
+        self, path: P,
+    ) -> RouterSetter<
+        RouterSetter<RouterSetter<R, SetToRouterTable, Ex>, SetToRouterTable, Ex>,
+        SetToEndpoint,
+        Ex,
+    > {
+        self.router.at(path)
+    }
+
+    pub fn uses<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
+        self.router.setter.set_to_target(self.router.router, middleware)
+    }
+}
+
 impl<R, Sw, Ex> RouterSetter<R, Sw, Ex>
 where
     R: RouterLike<Ex>,
@@ -362,9 +396,6 @@ where
     }
 
     impl_all_http_method! { R }
-
-    // TODO: add `methods` method to let user set different middleware for
-    //       different HTTP method easily (fluent api too)
 
     pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.setter.set_to_target(self.router, middleware)
