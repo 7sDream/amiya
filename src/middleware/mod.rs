@@ -43,9 +43,12 @@ where
 
 #[macro_export]
 macro_rules! m {
+    // Convert a async function to middleware by func's name
     ($func: ident) => {
         $crate::middleware::Custom { func: Box::new(|ctx| Box::pin($func(ctx))) }
     };
+
+    // Convert a block
 
     ($ctx: ident : $ex: ty => $body: block ) => {
         $crate::middleware::Custom {
@@ -55,16 +58,37 @@ macro_rules! m {
         }
     };
 
-    ($ctx: ident : $ex: ty => $body: expr ) => {
-        m!($ctx: $ex => { $body })
-    };
-
     ($ctx: ident => $body: block) => {
         m!($ctx: () => $body)
     };
 
-    ($ctx: ident => $body: expr) => {
-        m!($ctx: () => { $body })
+    // Convert one expr
+
+    ($ctx: ident : $ex: ty => $body: expr) => {
+        m!($ctx: $ex => { $body })
     };
 
+    ($ctx: ident => $body: expr) => {
+        m!($ctx => { $body })
+    };
+
+    // Convert one stmt
+
+     ($ctx: ident : $ex: ty => $body: stmt $(;)?) => {
+        m!($ctx: $ex => { $body ; Ok(()) })
+    };
+
+    ($ctx: ident => $body: stmt $(;)?) => {
+        m!($ctx => { $body ; Ok(()) })
+    };
+
+    // Convert another
+
+    ($ctx: ident : $ex: ty => $($body: tt)+) => {
+        m!($ctx: $ex => { $($body)+ })
+    };
+
+    ($ctx: ident => $($body: tt)+) => {
+        m!($ctx => { $($body)+ })
+    };
 }

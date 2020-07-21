@@ -19,14 +19,14 @@ fn main() {
             .done();
 
     let static_files_server = amiya::new()
-        .uses(m!(ctx => {
+        .uses(m!(ctx =>
             println!("someone visit static file server");
             ctx.next().await
-        }))
+        ))
         .uses(MethodRouter::default().get(
-            m!(ctx => {
+            m!(ctx =>
                 response(format!("Let's pretend this is content of file {}\n", ctx.remain_path()), ctx).await
-            })
+            )
         ));
 
     #[rustfmt::skip]

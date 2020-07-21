@@ -1,6 +1,6 @@
-use amiya::m;
-
 mod common;
+
+use amiya::m;
 
 // Extra data of Amiya must be Default + Send + Sync, and can't contain reference
 #[derive(Default)]
