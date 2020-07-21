@@ -371,6 +371,9 @@ where
 
     impl_all_http_method! { R }
 
+    // TODO: add `methods` method to let user set different middleware for
+    //       different HTTP method easily (fluent api too)
+
     pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.setter.set_to_target(self.router, middleware)
     }
