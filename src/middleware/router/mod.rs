@@ -380,7 +380,7 @@ where
         self.router.at(path)
     }
 
-    pub fn uses<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
+    pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.router.setter.set_to_target(self.router.router, middleware)
     }
 }
@@ -397,7 +397,7 @@ where
 
     impl_all_http_method! { R }
 
-    pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
+    pub fn uses<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.setter.set_to_target(self.router, middleware)
     }
 }
