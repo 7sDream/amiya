@@ -3,7 +3,7 @@ mod common;
 use {
     amiya::{
         m,
-        middleware::{router::RouterLike, Router},
+        middleware::router::{Router, RouterLike},
         Amiya,
     },
     common::response,
