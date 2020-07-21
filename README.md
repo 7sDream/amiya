@@ -18,7 +18,8 @@ mod common;
 use amiya::m;
 
 fn main() {
-    // Create async runtime, start worker threads pre cpu core, see `examples/common/mod.rs` for code
+    // Create async runtime, start worker threads pre cpu core
+    // see `examples/common/mod.rs` for code
     let ex = common::global_executor();
 
     // Only this stmt is Amiya related code, it sets response to some hello world texts
