@@ -22,6 +22,13 @@ pub type Result<T = ()> = http_types::Result<T>;
 
 type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 
+pub fn new<Ex>() -> Amiya<Ex>
+where
+    Ex: Default,
+{
+    Amiya::<Ex>::default()
+}
+
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct Amiya<Ex = ()> {

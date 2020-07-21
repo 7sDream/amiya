@@ -15,7 +15,7 @@ mod common;
 
 // m is a macro to let you easily write middleware use closure like Javascript's arrow function
 // it can also convert a async fn to a middleware use the `m!(async_func_name)` syntax.
-use amiya::{m, Amiya};
+use amiya::m;
 
 fn main() {
     // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
@@ -27,7 +27,7 @@ fn main() {
     //   - `Respond`'s code before `next()`, which do nothing
     //   - `Respond`'s code after `next()`, which set the response body
     //   - `Logger`'s code after `next()`, which read the response body and log it
-    let amiya = Amiya::default()
+    let amiya = amiya::new()
         // Let's call This middleware `Logger`
         // `ctx.next().await` will return after all inner middleware be executed
         // so the `content` will be "Hello World" , which is set by next middleware.

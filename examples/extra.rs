@@ -1,4 +1,4 @@
-use amiya::{m, Amiya};
+use amiya::m;
 
 mod common;
 
@@ -11,7 +11,7 @@ struct ExData {
 fn main() {
     let ex = common::global_executor();
 
-    let amiya = Amiya::default()
+    let amiya = amiya::new()
         // Amiya support extra data attach in context, just set it's type as second argument
         .uses(m!(ctx: ExData => {
             println!(

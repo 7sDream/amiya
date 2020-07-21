@@ -4,7 +4,6 @@ use {
     amiya::{
         m,
         middleware::{MethodRouter, Router},
-        Amiya,
     },
     common::response,
 };
@@ -19,7 +18,7 @@ fn main() {
             .at("logout").endpoint().get(m!(ctx => response("Logout V1 called\n", ctx).await)).done()
             .done();
 
-    let static_files_server = Amiya::default()
+    let static_files_server = amiya::new()
         .uses(m!(ctx => {
             println!("someone visit static file server");
             ctx.next().await
@@ -31,7 +30,7 @@ fn main() {
         ));
 
     #[rustfmt::skip]
-    let amiya = Amiya::default().uses(Router::default()
+    let amiya = amiya::new().uses(Router::default()
         .at("api").is(api_server)
         // You can use another Amiya server as a middleware
         .at("static").is(static_files_server));

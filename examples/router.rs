@@ -1,7 +1,7 @@
 mod common;
 
 use {
-    amiya::{m, middleware::Router, Amiya},
+    amiya::{m, middleware::Router},
     common::response,
 };
 
@@ -18,7 +18,7 @@ fn main() {
             .fallback().get(m!(ctx => response(format!("Get file {}\n", ctx.remain_path()), ctx).await))
             .done();
 
-    let amiya = Amiya::default().uses(router);
+    let amiya = amiya::new().uses(router);
 
     blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }
