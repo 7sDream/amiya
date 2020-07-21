@@ -6,7 +6,7 @@ fn main() {
     // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
     let ex = common::global_executor();
 
-    // Middleware is onion model, just as NodeJs's koa framework.
+    // The middleware system of Amiya uses onion model, just as NodeJs's koa framework.
     // The executed order is:
     //   - `Logger`'s code before `next()`, which print a log about request in
     //   - `Respond`'s code before `next()`, which do nothing

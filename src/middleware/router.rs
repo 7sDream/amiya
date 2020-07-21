@@ -25,28 +25,46 @@ static ALL_METHODS: &'static [Method] = &[
 
 macro_rules! impl_method {
     ($(#[$outer:meta])*
-    $funcname: ident : $method: expr) => {
+    $func_name: ident : $method: expr => $ret: ty) => {
         $(#[$outer])*
-        pub fn $funcname<M: Middleware<Ex> + 'static>(self, middleware: M) -> Self {
+        pub fn $func_name<M: Middleware<Ex> + 'static>(self, middleware: M) -> $ret {
             self.method($method, middleware)
         }
     };
 
-    ($($(#[$outer:meta])* $funcname: ident : $method: expr),* $(,)?) => {
-        $(impl_method!{$(#[$outer])* $funcname: $method})+
+    ($($(#[$outer:meta])*
+    $func_name: ident : $method: expr),* $(,)? => $ret: ty) => {
+        $(impl_method!{$(#[$outer])* $func_name: $method => $ret})+
+    };
+}
+
+macro_rules! impl_all_http_method {
+    ($ret: ty) => {
+        impl_method! {
+            get: Method::Get,
+            head: Method::Head,
+            post: Method::Post,
+            put: Method::Put,
+            delete: Method::Delete,
+            connect: Method::Connect,
+            options: Method::Options,
+            trace: Method::Trace,
+            patch: Method::Patch,
+            => $ret
+        }
     };
 }
 
 macro_rules! impl_methods {
-    ($(#[$outer:meta])* $funcname: ident : $methods: expr) => {
+    ($(#[$outer:meta])* $func_name: ident : $methods: expr) => {
         $(#[$outer])*
-        pub fn $funcname<M: Middleware<Ex> + 'static>(self, middleware: M) -> Self {
+        pub fn $func_name<M: Middleware<Ex> + 'static>(self, middleware: M) -> Self {
             self.methods($methods, middleware)
         }
     };
 
-    ($($(#[$outer:meta])* $funcname: ident : $methods: expr),* $(,)?) => {
-        $(impl_methods!{$(#[$outer])* $funcname: $methods})+
+    ($($(#[$outer:meta])* $func_name: ident : $methods: expr),* $(,)?) => {
+        $(impl_methods!{$(#[$outer])* $func_name: $methods})+
     };
 }
 
@@ -91,17 +109,7 @@ where
         self
     }
 
-    impl_method! {
-        get: Method::Get,
-        head: Method::Head,
-        post: Method::Post,
-        put: Method::Put,
-        delete: Method::Delete,
-        connect: Method::Connect,
-        options: Method::Options,
-        trace: Method::Trace,
-        patch: Method::Patch,
-    }
+    impl_all_http_method! { Self }
 
     impl_methods! {
         all: ALL_METHODS,
@@ -124,17 +132,34 @@ where
     }
 }
 
+pub trait RouterLike<Ex>: Sized
+where
+    Ex: Send + Sync + 'static,
+{
+    fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M);
+    fn set_fallback<M: Middleware<Ex> + 'static>(&mut self, middleware: M);
+    fn insert_to_router_table<P: Into<Cow<'static, str>>, M: Middleware<Ex> + 'static>(
+        &mut self, path: P, middleware: M,
+    );
+
+    fn endpoint(self) -> RouterSetter<Self, SetToEndpoint, Ex> {
+        RouterSetter::new_endpoint_setter(self)
+    }
+
+    fn at<P: Into<Cow<'static, str>>>(self, path: P) -> RouterSetter<Self, SetToRouterTable, Ex> {
+        RouterSetter::new_router_table_setter(self, path)
+    }
+
+    fn fallback(self) -> RouterSetter<Self, SetToFallback, Ex> {
+        RouterSetter::new_fallback_setter(self)
+    }
+}
+
 #[allow(missing_debug_implementations)]
 pub struct Router<Ex> {
     endpoint: Option<Box<dyn Middleware<Ex>>>,
     fallback: Option<Box<dyn Middleware<Ex>>>,
     table: HashMap<Cow<'static, str>, Box<dyn Middleware<Ex>>>,
-}
-
-impl<Ex> AsMut<Self> for Router<Ex> {
-    fn as_mut(&mut self) -> &mut Self {
-        self
-    }
 }
 
 impl<Ex> Default for Router<Ex> {
@@ -143,107 +168,22 @@ impl<Ex> Default for Router<Ex> {
     }
 }
 
-impl<Ex> Router<Ex>
+impl<Ex> RouterLike<Ex> for Router<Ex>
 where
     Ex: Send + Sync + 'static,
 {
-    pub fn sub_middleware<P, M>(mut self, path: P, middleware: M) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        M: Middleware<Ex> + 'static,
-    {
-        let path = path.into();
-        let middleware = Box::new(middleware);
-        if path.is_empty() {
-            self.fallback.replace(middleware);
-        } else {
-            self.table.insert(path, middleware);
-        }
-        self
-    }
-
-    pub fn sub_router<P, F>(self, path: P, f: F) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        F: FnOnce(Router<Ex>) -> Self,
-    {
-        let sub_router = Router::default();
-        let sub_router = f(sub_router);
-        self.sub_middleware(path, sub_router)
-    }
-
-    pub fn sub_by_method<P, F>(self, path: P, f: F) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        F: FnOnce(MethodRouter<Ex>) -> MethodRouter<Ex>,
-    {
-        let method_router = MethodRouter::default();
-        let method_router = f(method_router);
-        self.sub_middleware(path, method_router)
-    }
-
-    pub fn sub_endpoint<P, M>(self, path: P, middleware: M) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        M: Middleware<Ex> + 'static,
-    {
-        self.sub_router(path, |router| router.endpoint(middleware))
-    }
-
-    pub fn sub_endpoint_by_method_router<P, F>(self, path: P, f: F) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        F: FnOnce(MethodRouter<Ex>) -> MethodRouter<Ex>,
-    {
-        let method_router = MethodRouter::default();
-        let method_router = f(method_router);
-        self.sub_endpoint(path, method_router)
-    }
-
-    pub fn sub_endpoint_by_method<P, M>(self, path: P, method: Method, middleware: M) -> Self
-    where
-        P: Into<Cow<'static, str>>,
-        M: Middleware<Ex> + 'static,
-    {
-        self.sub_endpoint_by_method_router(path, move |mrouter| mrouter.method(method, middleware))
-    }
-
-    pub fn fallback<M: Middleware<Ex> + 'static>(mut self, middleware: M) -> Self {
-        self.fallback.replace(Box::new(middleware));
-        self
-    }
-
-    pub fn fallback_by_method_router<F>(self, f: F) -> Self
-    where
-        F: FnOnce(MethodRouter<Ex>) -> MethodRouter<Ex>,
-    {
-        let method_router = MethodRouter::default();
-        let method_router = f(method_router);
-        self.fallback(method_router)
-    }
-
-    pub fn fallback_by_method<M>(self, method: Method, middleware: M) -> Self
-    where
-        M: Middleware<Ex> + 'static,
-    {
-        self.fallback_by_method_router(move |mrouter| mrouter.method(method, middleware))
-    }
-
-    pub fn endpoint_by_method<F>(self, f: F) -> Self
-    where
-        F: FnOnce(MethodRouter<Ex>) -> MethodRouter<Ex>,
-    {
-        let method_router = MethodRouter::default();
-        let method_router = f(method_router);
-        self.endpoint(method_router)
-    }
-
-    pub fn endpoint<M>(mut self, middleware: M) -> Self
-    where
-        M: Middleware<Ex> + 'static,
-    {
+    fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
         self.endpoint.replace(Box::new(middleware));
-        self
+    }
+
+    fn set_fallback<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
+        self.fallback.replace(Box::new(middleware));
+    }
+
+    fn insert_to_router_table<P: Into<Cow<'static, str>>, M: Middleware<Ex> + 'static>(
+        &mut self, path: P, middleware: M,
+    ) {
+        self.table.insert(path.into(), Box::new(middleware));
     }
 }
 
@@ -278,5 +218,160 @@ where
 
         ctx.resp.set_status(StatusCode::NotFound);
         Ok(())
+    }
+}
+
+pub trait SetToWitch<Ex> {
+    fn set_to_target<R, M>(self, router: R, m: M) -> R
+    where
+        R: RouterLike<Ex>,
+        M: Middleware<Ex> + 'static,
+        Ex: Send + Sync + 'static;
+}
+
+#[derive(Debug)]
+pub struct SetToEndpoint {}
+
+impl<Ex> SetToWitch<Ex> for SetToEndpoint
+where
+    Ex: Send + Sync + 'static,
+{
+    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+    where
+        R: RouterLike<Ex>,
+        M: Middleware<Ex> + 'static,
+    {
+        router.set_endpoint(m);
+        router
+    }
+}
+
+#[derive(Debug)]
+pub struct SetToFallback {}
+
+impl<Ex> SetToWitch<Ex> for SetToFallback
+where
+    Ex: Send + Sync + 'static,
+{
+    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+    where
+        R: RouterLike<Ex>,
+        M: Middleware<Ex> + 'static,
+    {
+        router.set_fallback(m);
+        router
+    }
+}
+
+#[derive(Debug)]
+pub struct SetToRouterTable {
+    path: Cow<'static, str>,
+}
+
+impl<Ex> SetToWitch<Ex> for SetToRouterTable
+where
+    Ex: Send + Sync + 'static,
+{
+    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+    where
+        R: RouterLike<Ex>,
+        M: Middleware<Ex> + 'static,
+    {
+        router.insert_to_router_table(self.path, m);
+        router
+    }
+}
+
+#[allow(missing_debug_implementations)]
+pub struct RouterSetter<R, Sw, Ex> {
+    router: R,
+    sub_router: Router<Ex>,
+    method_router: MethodRouter<Ex>,
+    setter: Sw,
+}
+
+impl<R, Ex> RouterSetter<R, SetToEndpoint, Ex>
+where
+    R: RouterLike<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    fn new_endpoint_setter(router: R) -> Self {
+        Self {
+            router,
+            method_router: MethodRouter::default(),
+            sub_router: Router::default(),
+            setter: SetToEndpoint {},
+        }
+    }
+}
+
+impl<R, Ex> RouterSetter<R, SetToFallback, Ex>
+where
+    R: RouterLike<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    fn new_fallback_setter(router: R) -> Self {
+        Self {
+            router,
+            method_router: MethodRouter::default(),
+            sub_router: Router::default(),
+            setter: SetToFallback {},
+        }
+    }
+}
+
+impl<R, Ex> RouterSetter<R, SetToRouterTable, Ex>
+where
+    R: RouterLike<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    fn new_router_table_setter<P: Into<Cow<'static, str>>>(router: R, path: P) -> Self {
+        Self {
+            router,
+            method_router: MethodRouter::default(),
+            sub_router: Router::default(),
+            setter: SetToRouterTable { path: path.into() },
+        }
+    }
+
+    pub fn done(self) -> R {
+        self.setter.set_to_target(self.router, self.sub_router)
+    }
+}
+
+impl<R, Ex> RouterLike<Ex> for RouterSetter<R, SetToRouterTable, Ex>
+where
+    R: RouterLike<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
+        self.sub_router.set_endpoint(middleware);
+    }
+
+    fn set_fallback<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
+        self.sub_router.set_fallback(middleware);
+    }
+
+    fn insert_to_router_table<P: Into<Cow<'static, str>>, M: Middleware<Ex> + 'static>(
+        &mut self, path: P, middleware: M,
+    ) {
+        self.sub_router.insert_to_router_table(path, middleware);
+    }
+}
+
+impl<R, Sw, Ex> RouterSetter<R, Sw, Ex>
+where
+    R: RouterLike<Ex>,
+    Sw: SetToWitch<Ex>,
+    Ex: Send + Sync + 'static,
+{
+    pub fn method<M: Middleware<Ex> + 'static>(self, method: Method, middleware: M) -> R {
+        self.setter.set_to_target(self.router, self.method_router.method(method, middleware))
+    }
+
+    impl_all_http_method! { R }
+
+    pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
+        self.setter.set_to_target(self.router, middleware)
     }
 }

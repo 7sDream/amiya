@@ -4,6 +4,8 @@ Yet another **experimental** middleware-based minimalism async HTTP server frame
 
 Working in progress, just alpha stage now, missing many features.
 
+**API may changes every day, DO NOT use it in any condition except for test or study!**
+
 ## A Taste
 
 Code:
@@ -17,7 +19,7 @@ fn main() {
     // Start async worker threads pre cpu core, see `examples/common/mod.rs` for code
     let ex = common::global_executor();
 
-    // Middleware is onion model, just as NodeJs's koa framework.
+    // The middleware system of Amiya uses onion model, just as NodeJs's koa framework.
     // The executed order is:
     //   - `Logger`'s code before `next()`, which print a log about request in
     //   - `Respond`'s code before `next()`, which do nothing
@@ -79,6 +81,10 @@ Hello World!
 ## Examples
 
 See `examples` folder for more example with comments.
+
+- `example/extra.rs` for how to store extra data in context
+- `example/router.rs` for how to Use `Router` middleware
+- `example/subap.rs` for use another `Amiya` as a middleware
 
 ## License
 
