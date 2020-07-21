@@ -1,11 +1,7 @@
 mod common;
 
 use {
-    amiya::{
-        m,
-        middleware::router::{Router, RouterLike},
-        Amiya,
-    },
+    amiya::{m, middleware::Router, Amiya},
     common::response,
 };
 

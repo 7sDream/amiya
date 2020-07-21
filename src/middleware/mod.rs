@@ -1,4 +1,4 @@
-pub mod router;
+mod router;
 
 use {
     crate::{Context, Result},

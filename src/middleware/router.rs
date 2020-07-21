@@ -89,10 +89,7 @@ impl<Ex> Debug for MethodRouter<Ex> {
     }
 }
 
-impl<Ex> MethodRouter<Ex>
-where
-    Ex: Send + Sync + 'static,
-{
+impl<Ex> MethodRouter<Ex> {
     pub fn method<M: Middleware<Ex> + 'static>(mut self, method: Method, middleware: M) -> Self {
         let middleware: Arc<dyn Middleware<Ex>> = Arc::new(middleware);
         self.table.insert(method, Arc::clone(&middleware));
@@ -132,27 +129,30 @@ where
     }
 }
 
-pub trait RouterLike<Ex>: Sized
-where
-    Ex: Send + Sync + 'static,
-{
+pub trait RouterLike<Ex>: Sized {
     fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M);
     fn set_fallback<M: Middleware<Ex> + 'static>(&mut self, middleware: M);
     fn insert_to_router_table<P: Into<Cow<'static, str>>, M: Middleware<Ex> + 'static>(
         &mut self, path: P, middleware: M,
     );
+}
 
-    fn endpoint(self) -> RouterSetter<Self, SetToEndpoint, Ex> {
-        RouterSetter::new_endpoint_setter(self)
-    }
+macro_rules! impl_router_like_pub_fn {
+    ($ex: ty) => {
+        pub fn endpoint(self) -> RouterSetter<Self, SetToEndpoint, $ex> {
+            RouterSetter::new_endpoint_setter(self)
+        }
 
-    fn at<P: Into<Cow<'static, str>>>(self, path: P) -> RouterSetter<Self, SetToRouterTable, Ex> {
-        RouterSetter::new_router_table_setter(self, path)
-    }
+        pub fn at<P: Into<Cow<'static, str>>>(
+            self, path: P,
+        ) -> RouterSetter<Self, SetToRouterTable, $ex> {
+            RouterSetter::new_router_table_setter(self, path)
+        }
 
-    fn fallback(self) -> RouterSetter<Self, SetToFallback, Ex> {
-        RouterSetter::new_fallback_setter(self)
-    }
+        pub fn fallback(self) -> RouterSetter<Self, SetToFallback, $ex> {
+            RouterSetter::new_fallback_setter(self)
+        }
+    };
 }
 
 #[allow(missing_debug_implementations)]
@@ -168,10 +168,7 @@ impl<Ex> Default for Router<Ex> {
     }
 }
 
-impl<Ex> RouterLike<Ex> for Router<Ex>
-where
-    Ex: Send + Sync + 'static,
-{
+impl<Ex> RouterLike<Ex> for Router<Ex> {
     fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
         self.endpoint.replace(Box::new(middleware));
     }
@@ -185,6 +182,10 @@ where
     ) {
         self.table.insert(path.into(), Box::new(middleware));
     }
+}
+
+impl<Ex> Router<Ex> {
+    impl_router_like_pub_fn! { Ex }
 }
 
 #[async_trait]
@@ -222,26 +223,22 @@ where
 }
 
 pub trait SetToWitch<Ex> {
-    fn set_to_target<R, M>(self, router: R, m: M) -> R
+    fn set_to_target<R, M>(self, router: R, middleware: M) -> R
     where
         R: RouterLike<Ex>,
-        M: Middleware<Ex> + 'static,
-        Ex: Send + Sync + 'static;
+        M: Middleware<Ex> + 'static;
 }
 
 #[derive(Debug)]
 pub struct SetToEndpoint {}
 
-impl<Ex> SetToWitch<Ex> for SetToEndpoint
-where
-    Ex: Send + Sync + 'static,
-{
-    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+impl<Ex> SetToWitch<Ex> for SetToEndpoint {
+    fn set_to_target<R, M>(self, mut router: R, middleware: M) -> R
     where
         R: RouterLike<Ex>,
         M: Middleware<Ex> + 'static,
     {
-        router.set_endpoint(m);
+        router.set_endpoint(middleware);
         router
     }
 }
@@ -249,16 +246,13 @@ where
 #[derive(Debug)]
 pub struct SetToFallback {}
 
-impl<Ex> SetToWitch<Ex> for SetToFallback
-where
-    Ex: Send + Sync + 'static,
-{
-    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+impl<Ex> SetToWitch<Ex> for SetToFallback {
+    fn set_to_target<R, M>(self, mut router: R, middleware: M) -> R
     where
         R: RouterLike<Ex>,
         M: Middleware<Ex> + 'static,
     {
-        router.set_fallback(m);
+        router.set_fallback(middleware);
         router
     }
 }
@@ -268,16 +262,13 @@ pub struct SetToRouterTable {
     path: Cow<'static, str>,
 }
 
-impl<Ex> SetToWitch<Ex> for SetToRouterTable
-where
-    Ex: Send + Sync + 'static,
-{
-    fn set_to_target<R, M>(self, mut router: R, m: M) -> R
+impl<Ex> SetToWitch<Ex> for SetToRouterTable {
+    fn set_to_target<R, M>(self, mut router: R, middleware: M) -> R
     where
         R: RouterLike<Ex>,
         M: Middleware<Ex> + 'static,
     {
-        router.insert_to_router_table(self.path, m);
+        router.insert_to_router_table(self.path, middleware);
         router
     }
 }
@@ -293,7 +284,6 @@ pub struct RouterSetter<R, Sw, Ex> {
 impl<R, Ex> RouterSetter<R, SetToEndpoint, Ex>
 where
     R: RouterLike<Ex>,
-    Ex: Send + Sync + 'static,
 {
     fn new_endpoint_setter(router: R) -> Self {
         Self {
@@ -308,7 +298,6 @@ where
 impl<R, Ex> RouterSetter<R, SetToFallback, Ex>
 where
     R: RouterLike<Ex>,
-    Ex: Send + Sync + 'static,
 {
     fn new_fallback_setter(router: R) -> Self {
         Self {
@@ -323,7 +312,6 @@ where
 impl<R, Ex> RouterSetter<R, SetToRouterTable, Ex>
 where
     R: RouterLike<Ex>,
-    Ex: Send + Sync + 'static,
 {
     fn new_router_table_setter<P: Into<Cow<'static, str>>>(router: R, path: P) -> Self {
         Self {
@@ -334,7 +322,12 @@ where
         }
     }
 
-    pub fn done(self) -> R {
+    impl_router_like_pub_fn! { Ex }
+
+    pub fn done(self) -> R
+    where
+        Ex: Send + Sync + 'static,
+    {
         self.setter.set_to_target(self.router, self.sub_router)
     }
 }
@@ -342,7 +335,6 @@ where
 impl<R, Ex> RouterLike<Ex> for RouterSetter<R, SetToRouterTable, Ex>
 where
     R: RouterLike<Ex>,
-    Ex: Send + Sync + 'static,
 {
     fn set_endpoint<M: Middleware<Ex> + 'static>(&mut self, middleware: M) {
         self.sub_router.set_endpoint(middleware);

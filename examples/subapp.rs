@@ -3,7 +3,7 @@ mod common;
 use {
     amiya::{
         m,
-        middleware::router::{MethodRouter, Router, RouterLike},
+        middleware::{MethodRouter, Router},
         Amiya,
     },
     common::response,
@@ -34,12 +34,11 @@ fn main() {
             })
         ));
 
-    let amiya = Amiya::default().uses(
-        Router::default()
-            .at("api").is(api_server)
-            // You can use another Amiya server as a middleware
-            .at("static").is(static_files_server),
-    );
+    #[rustfmt::skip]
+    let amiya = Amiya::default().uses(Router::default()
+        .at("api").is(api_server)
+        // You can use another Amiya server as a middleware
+        .at("static").is(static_files_server));
 
     blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }
