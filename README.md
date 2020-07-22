@@ -34,7 +34,7 @@ fn main() {
 
 Client output: 
 
-```bash
+```console
 $ curl http://127.0.0.1:8080/we/visit/some/path -v
 *   Trying 127.0.0.1:8080...
 * Connected to 127.0.0.1 (127.0.0.1) port 8080 (#0)
@@ -105,7 +105,7 @@ finish, response is: Hello World!
 
 Client output:
 
-```bash
+```console
 $ curl 'http://127.0.0.1:8080/' -v
 *   Trying 127.0.0.1:8080...
 * Connected to 127.0.0.1 (127.0.0.1) port 8080 (#0)
