@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          - ref: refs/heads/master
 
       - name: Install Rust toolchains
         uses: actions-rs/toolchain@v1
@@ -54,6 +56,11 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+      - name: Show local repo status
+        run: |
+          git status
+          git rev-parse --abbrev-ref HEAD@\{upstream\} || true
 
       - name: Upload to Github Pages
         run: env GH_TOKEN=${{ secrets.GITHUB_TOKEN }} cargo ghp-upload -vv
