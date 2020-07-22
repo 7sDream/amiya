@@ -1,3 +1,5 @@
+//! Middleware system implement and built-in middleware provided by amiya
+
 mod router;
 
 use {
@@ -10,24 +12,19 @@ pub use router::{router, MethodRouter, Router};
 
 type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
 
+/// You can turn any type into a middleware by implement this trait.
 #[async_trait]
 pub trait Middleware<Ex>: Send + Sync {
+    /// You middleware's handler function, it will be called when request reach this middleware
     async fn handle(&self, ctx: Context<'_, Ex>) -> Result;
 }
 
-#[async_trait]
-impl<Ex, F> Middleware<Ex> for F
-where
-    Ex: Send + Sync + 'static,
-    F: Fn(Context<'_, Ex>) -> BoxedResultFut<'_> + Send + Sync,
-{
-    async fn handle(&self, ctx: Context<'_, Ex>) -> Result {
-        (self)(ctx).await
-    }
-}
-
+/// A wrapper for middleware created by the `m` macro.
+///
+/// **Do Not** use this type directly!
 #[allow(missing_debug_implementations)]
 pub struct Custom<Ex> {
+    /// the code in macro `m`, converted to a boxed async func
     pub func: Box<dyn Fn(Context<'_, Ex>) -> BoxedResultFut<'_> + Send + Sync>,
 }
 
@@ -41,6 +38,16 @@ where
     }
 }
 
+/// Writer middleware easily.
+///
+/// `m` is a macro to let you easily write middleware use closure and syntax like Javascript's
+/// arrow function.
+///
+/// it can also convert a async fn to a middleware use the `m!(async_func_name)` syntax.
+///
+/// ## Example
+///
+/// TODO: example
 #[macro_export]
 macro_rules! m {
     // Convert a async function to middleware by func's name
