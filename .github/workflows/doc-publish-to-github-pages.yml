@@ -41,7 +41,7 @@ jobs:
           use-tool-cache: true
 
       - name: Build Doc
-        run: cargo +nightly doc --verbose
+        run: cargo +nightly doc --no-deps --verbose
 
       - name: Set comitter name and origin url
         run: |
