@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          - ref: refs/heads/master
+          ref: refs/heads/master
 
       - name: Install Rust toolchains
         uses: actions-rs/toolchain@v1
