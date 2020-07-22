@@ -16,7 +16,9 @@ jobs:
         id: toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          # cookie crate needs nightly to build doc
+          # see https://github.com/SergioBenitez/cookie-rs/issues/153
+          toolchain: nightly
           override: true
 
       - name: Cache cargo registry
@@ -31,16 +33,6 @@ jobs:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
-#      - name: Cache build result
-#        uses: actions/cache@v1
-#        with:
-#          path: target
-#          key: ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
-#          restore-keys: |
-#            ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-
-#            ${{ runner.OS }}-build-
-#            ${{ runner.OS }}-
-
       - name: Install cargo-ghp-upload
         uses: actions-rs/install@v0.1
         with:
@@ -49,11 +41,11 @@ jobs:
           use-tool-cache: true
 
       - name: Build Doc
-        run: cargo doc --no-deps --verbose
+        run: cargo +nightly doc --verbose
 
-      - name: Set Comitter name and origin url
+      - name: Set comitter name and origin url
         run: |
-          git config user.name "GitHub Action"
+          git config --global user.name "GitHub Action"
           git remote set-url origin https://github.com/${GITHUB_REPOSITORY}.git
 
       - name: Output user info
