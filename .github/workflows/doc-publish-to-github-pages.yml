@@ -63,7 +63,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git
 
       - name: Show local repo status
         run: |
@@ -72,4 +72,4 @@ jobs:
           git rev-parse --abbrev-ref HEAD@\{upstream\} || true
 
       - name: Upload to Github Pages
-        run: env GH_TOKEN=${{ secrets.GITHUB_TOKEN }} cargo ghp-upload -vv
+        run: env GH_TOKEN=${{ secrets.GITHUB_TOKEN }} cargo ghp-upload -vvvv
