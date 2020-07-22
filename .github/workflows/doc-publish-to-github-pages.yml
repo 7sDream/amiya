@@ -1,0 +1,59 @@
+name: DocPublishToGithubPages
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchains
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache build result
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
+          restore-keys: |
+            ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.OS }}-build-
+            ${{ runner.OS }}-
+
+      - name: Install cargo-ghp-upload
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-ghp-upload
+          version: 0.3.4
+          use-tool-cache: true
+
+      - name: Build Doc
+        run: cargo +nightly doc --verbose
+
+      - name: Set Comitter name and email
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Upload to Github Pages
+        run: env GH_TOKEN=${{ secrets.GITHUB_TOKEN }} cargo ghp-upload -vv
