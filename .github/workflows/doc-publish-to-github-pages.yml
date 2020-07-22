@@ -11,12 +11,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          ref: refs/heads/master
 
       - name: Install Rust toolchains
+        id: toolchain
         uses: actions-rs/toolchain@v1
         with:
+          # cookie crate needs nightly to build doc...
+          # see https://github.com/SergioBenitez/cookie-rs/issues/153
           toolchain: nightly
           override: true
 
@@ -52,14 +53,22 @@ jobs:
       - name: Build Doc
         run: cargo +nightly doc --verbose
 
+      - name: Show local repo status
+        run: |
+          git status
+          git remote -vv
+          git rev-parse --abbrev-ref HEAD@\{upstream\} || true
+
       - name: Set Comitter name and email
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
 
       - name: Show local repo status
         run: |
           git status
+          git remote -vv
           git rev-parse --abbrev-ref HEAD@\{upstream\} || true
 
       - name: Upload to Github Pages

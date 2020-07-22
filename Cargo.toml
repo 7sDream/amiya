@@ -18,6 +18,8 @@ async-net = "0.1"
 # TODO: async-h1 and http-types now use async-std, which use smol older 0.1.18 version,
 #       this make a huge duplicate dependence and something like recursive dependence,
 #       it doesn't lead to problem for now, but we better recheck this issue before publish 0.1
+# TODO: cookie crate needs nightly to build doc, recheck this too
+#       see https://github.com/SergioBenitez/cookie-rs/issues/153
 http-types = { version = "2", default-features = false }
 async-h1 = "2"
 async-trait = "0.1"
