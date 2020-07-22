@@ -52,4 +52,4 @@ jobs:
         run: git config --list
 
       - name: Upload to Github Pages
-        run: env GH_TOKEN=${{ secrets.GITHUB_TOKEN }} cargo ghp-upload -vvvv
+        run: env GH_TOKEN=${{ secrets.gh_token }} cargo ghp-upload -vvvv
