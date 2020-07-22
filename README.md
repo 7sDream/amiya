@@ -12,7 +12,7 @@ API design may changes every day, **DO NOT** use it in any condition except for 
 
 ## Goal
 
-The goal of this project is try to build a (by that order):
+The goal of this project is try to build a (by importance order):
 
 - Safe
 - Async
@@ -24,6 +24,10 @@ HTTP framework for myself to write simple web services.
 
 Amiya uses [`async-h1`] to parse and process the request, so only HTTP version 1.1 is supported
 for now. HTTP 2.0 is not in goal list, at least for the near future.
+
+Performance is NOT in the list too, after all, it's just a experimental. Amiya use many heap alloc
+(Box) and Dynamic Dispatch (Trait Object) so there maybe are some performance reduce compare to use
+`async-h1` directly.
 
 ## Examples
 

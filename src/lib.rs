@@ -10,7 +10,7 @@
 //!
 //! ## Goal
 //!
-//! The goal of this project is try to build a (by that order):
+//! The goal of this project is try to build a (by importance order):
 //!
 //! - Safe
 //! - Async
@@ -22,6 +22,10 @@
 //!
 //! Amiya uses [`async-h1`] to parse and process the request, so only HTTP version 1.1 is supported
 //! for now. HTTP 2.0 is not in goal list, at least for the near future.
+//!
+//! Performance is NOT in the list too, after all, it's just a experimental. Amiya use many heap
+//! alloc (Box) and Dynamic Dispatch (Trait Object) so there maybe are some performance reduce
+//! compare to use `async-h1` directly.
 //!
 //! ## Examples
 //!
@@ -50,7 +54,7 @@
 //!
 //! - Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
 //! - How to store extra data in context: [`examples/extra.rs`]
-//! - Use `Router` middleware for request diversion: [`examples/router.rs`]
+//! - Use [`Router`] middleware for request diversion: [`examples/router.rs`]
 //! - Use another Amiya service as a middleware: [`examples/subapp.rs`]
 //!
 //! [`smol`]: https://github.com/stjepang/smol
@@ -60,6 +64,7 @@
 //! [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
 //! [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 //! [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
+//! [`Router`]: middleware/struct.Router.html
 
 #![deny(warnings)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
