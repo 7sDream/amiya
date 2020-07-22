@@ -1,5 +1,7 @@
 # Amiya
 
+[![][doc-badge-img]][doc-gh-pages]
+
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
 
@@ -22,12 +24,12 @@ The goal of this project is try to build a (by importance order):
 
 HTTP framework for myself to write simple web services.
 
-Amiya uses [`async-h1`] to parse and process the request, so only HTTP version 1.1 is supported
-for now. HTTP 2.0 is not in goal list, at least for the near future.
+Amiya uses [`async-h1`] to parse and process requests, so only HTTP version 1.1 is supported for 
+now. HTTP 2.0 is not in goal list, at least in the near future.
 
-Performance is NOT in the list too, after all, it's just a experimental. Amiya use many heap alloc
-(Box) and Dynamic Dispatch (Trait Object) so there maybe are some performance reduce compare to use
-`async-h1` directly.
+Performance is NOT in the list too, after all, it's just a experimental. Amiya use many heap
+alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss compare to
+use `async-h1` directly.
 
 ## Examples
 
@@ -70,6 +72,8 @@ You can check/run other examples for:
 
 BSD 3-Clause Clear License, See [`LICENSE`].
 
+[doc-badge-img]: https://img.shields.io/badge/docs-on_github_pages-brightgreen?color=success&style=flat-square&logo=read-the-docs
+[doc-gh-pages]: https://7sdream.github.io/amiya/master/amiya
 [`smol`]: https://github.com/stjepang/smol
 [`async-h1`]: https://github.com/http-rs/async-h1
 [`examples/hello.rs`]: https://github.com/7sDream/amiya/blob/master/examples/hello.rs

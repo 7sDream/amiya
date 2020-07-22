@@ -20,12 +20,12 @@
 //!
 //! HTTP framework for myself to write simple web services.
 //!
-//! Amiya uses [`async-h1`] to parse and process the request, so only HTTP version 1.1 is supported
-//! for now. HTTP 2.0 is not in goal list, at least for the near future.
+//! Amiya uses [`async-h1`] to parse and process requests, so only HTTP version 1.1 is supported
+//! for now. HTTP 2.0 is not in goal list, at least in the near future.
 //!
 //! Performance is NOT in the list too, after all, it's just a experimental. Amiya use many heap
-//! alloc (Box) and Dynamic Dispatch (Trait Object) so there maybe are some performance reduce
-//! compare to use `async-h1` directly.
+//! alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss compare to
+//! use `async-h1` directly.
 //!
 //! ## Examples
 //!
