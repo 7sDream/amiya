@@ -33,15 +33,15 @@ jobs:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Cache build result
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
-          restore-keys: |
-            ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-
-            ${{ runner.OS }}-build-
-            ${{ runner.OS }}-
+#      - name: Cache build result
+#        uses: actions/cache@v1
+#        with:
+#          path: target
+#          key: ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-${{ steps.toolchain.outputs.rustc_hash }}
+#          restore-keys: |
+#            ${{ runner.OS }}-build-${{ hashFiles('Cargo.lock') }}-
+#            ${{ runner.OS }}-build-
+#            ${{ runner.OS }}-
 
       - name: Install cargo-ghp-upload
         uses: actions-rs/install@v0.1
@@ -53,10 +53,10 @@ jobs:
       - name: Build Doc
         run: cargo +nightly doc --verbose
 
-      - name: Set Comitter name and email
+      - name: Set Comitter name and origin url
         run: |
           git config user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git
+          git remote set-url origin https://github.com/${GITHUB_REPOSITORY}.git
 
       - name: Output user info
         run: git config --list
