@@ -44,15 +44,6 @@ fn main() {
 
     blocking::block_on(ex.spawn(app.listen("[::]:8080"))).unwrap();
 
-    // $ curl http://localhost:8080/ -v
-    // *   Trying ::1...
-    // * TCP_NODELAY set
-    // * Connected to localhost (::1) port 8080 (#0)
-    // > GET /api/v1/hello/ HTTP/1.1
-    // > Host: localhost:8080
-    // > User-Agent: curl/7.64.1
-    // > Accept: */*
-    // >
     // < HTTP/1.1 200 OK
     // < content-length: 6
     // < date: Thu, 23 Jul 2020 15:50:07 GMT
