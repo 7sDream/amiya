@@ -21,14 +21,12 @@ fn main() {
             let content = ctx.resp.take_body().into_string().await.unwrap();
             println!("finish, response is: {}", content);
             ctx.resp.set_body(content);
-            Ok(())
         ))
         // Let's call This middleware `Respond`
         // This middleware set tht response
         .uses(m!(ctx =>
             ctx.next().await?;
             ctx.resp.set_body("Hello World!");
-            Ok(())
         ));
 
     blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();

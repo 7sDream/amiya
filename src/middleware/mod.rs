@@ -1,4 +1,4 @@
-//! Built-in middleware
+//! Built-in middleware.
 
 mod router;
 
@@ -60,7 +60,68 @@ where
 ///
 /// ## Examples
 ///
-/// TODO: example
+/// ### Convert a async function to middleware
+///
+/// ```
+/// # use amiya::{Context, Result, m};
+/// async fn response(mut ctx: Context<'_, ()>) -> Result {
+///     ctx.next().await?;
+///     ctx.resp.set_body("Hello world");
+///     Ok(())
+/// }
+///
+/// let app = amiya::new().uses(m!(response));
+/// ```
+///
+/// ### Convert a block to middleware
+///
+/// Syntax: `<Context parameter name> [: Extra data type] => { <your code> }`
+///
+/// Default extra data type is `()`, same bellow.
+///
+/// ```
+/// # use amiya::m;
+/// //                                 | this `: ()` can be omitted
+/// //                                 v
+/// let app = amiya::new().uses(m!(ctx: () => {
+///     ctx.next().await?;
+///     ctx.resp.set_body("Hello world");
+///     Ok(())
+/// }));
+/// ```
+///
+/// ### Convert a expr to middleware
+///
+/// Syntax: `<Context parameter name> [: Extra data type] => <The expr>`
+///
+/// ```
+/// # use amiya::{Context, Result, m};
+/// async fn response(msg: &'static str, mut ctx: Context<'_, ()>) -> Result {
+///     ctx.next().await?;
+///     ctx.resp.set_body(msg);
+///     Ok(())
+/// }
+///
+/// let app = amiya::new().uses(m!(ctx => response("Hello World", ctx).await));
+/// ```
+///
+/// ### Convert  statements to middleware
+///
+/// Syntax: `<Context parameter name> [: Extra data type] => <statements>`
+///
+/// ```
+/// # use amiya::m;
+/// let app = amiya::new().uses(m!(ctx => ctx.resp.set_body("Hello World");));
+/// ```
+///
+/// Notice you do not return a value here, because a `Ok(())` is auto added.
+///
+/// This is expand to:
+///
+/// ```text
+/// ctx.resp.set_body("Hello World");
+/// Ok(())
+/// ```
 ///
 /// [`M`]: middleware/struct.M.html
 /// [`Middleware`]: middleware/trait.Middleware.html
@@ -96,23 +157,23 @@ macro_rules! m {
         m!($ctx => { $body })
     };
 
-    // Convert one stmt
-
-     ($ctx: ident : $ex: ty => $body: stmt $(;)?) => {
-        m!($ctx: $ex => { $body ; Ok(()) })
-    };
-
-    ($ctx: ident => $body: stmt $(;)?) => {
-        m!($ctx => { $body ; Ok(()) })
-    };
+    // // Convert one stmt
+    //
+    //  ($ctx: ident : $ex: ty => $body: stmt $(;)?) => {
+    //     m!($ctx: $ex => { $body ; Ok(()) })
+    // };
+    //
+    // ($ctx: ident => $body: stmt $(;)?) => {
+    //     m!($ctx => { $body ; Ok(()) })
+    // };
 
     // Convert another
 
     ($ctx: ident : $ex: ty => $($body: tt)+) => {
-        m!($ctx: $ex => { $($body)+ })
+        m!($ctx: $ex => { $($body)+ ; Ok(()) })
     };
 
     ($ctx: ident => $($body: tt)+) => {
-        m!($ctx => { $($body)+ })
+        m!($ctx => { $($body)+ ; Ok(()) })
     };
 }

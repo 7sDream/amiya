@@ -23,7 +23,7 @@ fn main() {
     let static_files_server = amiya::new()
         .uses(m!(ctx =>
             println!("someone visit static file server");
-            ctx.next().await
+            ctx.next().await?;
         ))
         .uses(router() 
             // `endpoint` enter exact match handler setting context for new router. For sub router

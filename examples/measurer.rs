@@ -1,8 +1,7 @@
 mod common;
 
-use amiya::Context;
 use {
-    amiya::{middleware::Middleware, Result},
+    amiya::{middleware::Middleware, Context, Result},
     async_trait::async_trait,
     std::time::Instant,
 };
@@ -53,3 +52,5 @@ fn main() {
     // * Connection #0 to host localhost left intact
     // Finish* Closing connection 0                     <------------- Set by RequestHandler
 }
+
+// Referer to `examples/measurer_minimal.rs` to see how to macro `m` to achieve the same result

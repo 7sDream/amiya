@@ -3,7 +3,7 @@ use {
     std::sync::Arc,
 };
 
-/// The context middleware works on
+/// The context middleware works on.
 #[allow(missing_debug_implementations)]
 pub struct Context<'x, Ex> {
     /// The incoming http request

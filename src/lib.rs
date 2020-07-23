@@ -74,7 +74,7 @@
 //!
 //! there is a simplest example:
 //!
-//! ```rust
+//! ```
 //! use amiya::{Context, Result, m};
 //!
 //! async fn A(mut ctx: Context<'_, ()>) -> Result {
@@ -134,7 +134,7 @@
 //!
 //! To start a very simple HTTP service that returns `Hello World` to the client in all paths:
 //!
-//! ```rust
+//! ```
 //! use amiya::m;
 //!
 //! fn main() {
@@ -179,13 +179,13 @@ pub mod middleware;
 use {
     async_net::{AsyncToSocketAddrs, TcpListener},
     async_trait::async_trait,
-    middleware::Middleware,
     std::{fmt::Debug, io, sync::Arc},
 };
 
 pub use {
     context::Context,
     http_types::{Method, Request, Response, StatusCode},
+    middleware::Middleware,
 };
 
 /// The Result type all middleware should returns
@@ -245,13 +245,13 @@ where
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// use amiya::m;
     ///
     /// amiya::new().uses(m!(ctx => ctx.next().await));
     /// ```
     ///
-    /// ```rust
+    /// ```
     /// use amiya::{m, middleware::router};
     ///
     /// let router = router().endpoint().get(m!(
@@ -291,28 +291,28 @@ where
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// amiya::new().listen("127.0.0.1:8080");
     /// ```
     ///
-    /// ```rust
+    /// ```
     /// amiya::new().listen(("127.0.0.1", 8080));
     /// ```
     ///
-    /// ```rust
+    /// ```
     /// use std::net::Ipv4Addr;
     ///
     /// amiya::new().listen((Ipv4Addr::new(127, 0, 0, 1), 8080));
     /// ```
     ///
-    /// ```rust
+    /// ```
     /// use std::net::{SocketAddrV4, Ipv4Addr};
     ///
     /// let socket = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 8080);
     /// amiya::new().listen(socket);
     /// ```
     ///
-    /// ```rust
+    /// ```
     /// amiya::new().listen("[::]:8080");
     /// ```
     pub async fn listen<A: AsyncToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
