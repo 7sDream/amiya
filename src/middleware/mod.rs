@@ -1,4 +1,4 @@
-//! Middleware system implement and built-in middleware provided by amiya
+//! Built-in middleware
 
 mod router;
 
@@ -12,24 +12,37 @@ pub use router::{router, MethodRouter, Router};
 
 type BoxedResultFut<'x> = Pin<Box<dyn Future<Output = Result> + Send + 'x>>;
 
-/// You can turn any type into a middleware by implement this trait.
+/// Use your custom type as a middleware by implement this trait.
+///
+/// You need [`async_trait`] to implement this.
+///
+/// See [`examples/measurer.rs`] for a example of process time usage measurer middleware.
+///
+/// [`async_trait`]: https://github.com/dtolnay/async-trait
+/// [`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 #[async_trait]
 pub trait Middleware<Ex>: Send + Sync {
     /// You middleware's handler function, it will be called when request reach this middleware
     async fn handle(&self, ctx: Context<'_, Ex>) -> Result;
 }
 
-/// A wrapper for middleware created by the `m` macro.
+/// The wrapper for use async function or closure as a middleware.
 ///
-/// **Do Not** use this type directly!
+/// This is the type when you use macro [`m`] , **Do Not** use this type directly!
+///
+/// [`m`]: ../macro.m.html
 #[allow(missing_debug_implementations)]
-pub struct Custom<Ex> {
-    /// the code in macro `m`, converted to a boxed async func
+pub struct M<Ex> {
+    /// the code in macro [`m`], converted to a boxed async func.
+    ///
+    /// **Do Not** set this field by hand, use macro [`m`] instead!
+    ///
+    /// [`m`]: ../macro.m.html
     pub func: Box<dyn Fn(Context<'_, Ex>) -> BoxedResultFut<'_> + Send + Sync>,
 }
 
 #[async_trait]
-impl<Ex> Middleware<Ex> for Custom<Ex>
+impl<Ex> Middleware<Ex> for M<Ex>
 where
     Ex: Send + Sync + 'static,
 {
@@ -40,26 +53,29 @@ where
 
 /// Writer middleware easily.
 ///
-/// `m` is a macro to let you easily write middleware use closure and syntax like Javascript's
-/// arrow function.
+/// It's a macro to let you easily write middleware use closure and syntax like Javascript's
+/// arrow function, or convert a async fn to a middleware use the `m!(async_func_name)` syntax.
 ///
-/// it can also convert a async fn to a middleware use the `m!(async_func_name)` syntax.
+/// It returns a [`M`] instance, which implement [`Middleware`] trait.
 ///
-/// ## Example
+/// ## Examples
 ///
 /// TODO: example
+///
+/// [`M`]: middleware/struct.M.html
+/// [`Middleware`]: middleware/trait.Middleware.html
 #[macro_export]
 macro_rules! m {
     // Convert a async function to middleware by func's name
 
     ($func: ident) => {
-        $crate::middleware::Custom { func: Box::new(|ctx| Box::pin($func(ctx))) }
+        $crate::middleware::M { func: Box::new(|ctx| Box::pin($func(ctx))) }
     };
 
     // Convert a block
 
     ($ctx: ident : $ex: ty => $body: block ) => {
-        $crate::middleware::Custom {
+        $crate::middleware::M {
             func: Box::new(move |mut $ctx: $crate::Context<'_, $ex>| {
                 Box::pin(async move { $body })
             }),

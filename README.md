@@ -66,6 +66,7 @@ framework, I recommend read it first, and then check those examples to get a mor
 understanding:
 
 - Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
+- Write a custom middleware type: [`examples/measurer.rs`]
 - How to store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
 - Use another Amiya service as a middleware: [`examples/subapp.rs`]
@@ -81,6 +82,7 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 [`async-h1`]: https://github.com/http-rs/async-h1
 [`examples/hello.rs`]: https://github.com/7sDream/amiya/blob/master/examples/hello.rs
 [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
+[`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
 [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
