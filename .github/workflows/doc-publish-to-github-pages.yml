@@ -6,6 +6,7 @@ on:
       - master
     paths:
       - 'src/**'
+      - '.github/workflows/**'
 
 jobs:
   build-and-publish:
@@ -18,9 +19,7 @@ jobs:
         id: toolchain
         uses: actions-rs/toolchain@v1
         with:
-          # cookie crate needs nightly to build doc
-          # see https://github.com/SergioBenitez/cookie-rs/issues/153
-          toolchain: nightly
+          toolchain: stable
           override: true
 
       - name: Cache cargo registry
@@ -43,7 +42,7 @@ jobs:
           use-tool-cache: true
 
       - name: Build Doc
-        run: cargo +nightly doc --verbose
+        run: cargo doc --verbose
 
       - name: Set comitter name and origin url
         run: |
