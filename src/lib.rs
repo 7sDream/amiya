@@ -126,14 +126,14 @@ pub fn new<Ex>() -> Amiya<Ex> {
 ///
 /// ### Request, Response and the process pipeline
 ///
-/// For every Http Request comes to a Amiya server, the framework will create a Struct [`Request`] to
-/// represent it, It's **immutable** in the whole request process pipeline.
+/// For every HTTP request comes to a Amiya server, the framework will create a [`Request`] struct
+/// to represent it. It's immutable in the whole request process pipeline.
 ///
 /// And a [`Response`] is created at the same time. It's a normal `200 OK` empty header empty body
 /// response at first, but it's mutable and can be edit by middleware.
 ///
-/// After all middleware has been executed, the [`Response`] maybe edit by many middleware, and it's
-/// the final result we will send to the client.
+/// After all middleware has been executed, the [`Response`] maybe edited by many middleware, and
+/// as the final result we will send to the client.
 ///
 /// ### [`Middleware`]
 ///
@@ -217,8 +217,16 @@ pub fn new<Ex>() -> Amiya<Ex> {
 /// path then delegate the ctx to corresponding other middleware), a Logger or Time measurer (by
 /// print log before and after the [`next`] call), etc...
 ///
+/// And a middleware does not have to call [`next`], and in that statution no inner middlewares will
+/// be executed, middleware like [`Router`] or login state checker can use this mechanism to make
+/// unprocessable requests responsed early.
+///
 /// You can create you own [`Middleware`] by implement the trait for your type, or using the [`m`]
 /// macro, see their document for detail.
+///
+/// ## Examples
+///
+/// TODO: write a simple example
 ///
 /// [`Request`]: struct.Request.html
 /// [`Response`]: struct.Response.html
@@ -226,7 +234,9 @@ pub fn new<Ex>() -> Amiya<Ex> {
 /// [`Context`]: struct.Context.html
 /// [Koa]: https://github.com/koajs/koa
 /// [`next`]: struct.Context.html#method.next
+/// [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
 /// [`Result`]: type.Result.html
+/// [`Router`]: middleware/struct.Router.html
 /// [`m`]: macro.m.html
 /// [img-onion-model]: https://rikka.7sdre.am/files/b1743b18-ba9f-4dc1-8c1d-15945978d0b1.png
 #[allow(missing_debug_implementations)]
