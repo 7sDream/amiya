@@ -120,12 +120,13 @@ where
                 return endpoint.handle(ctx).await;
             }
         } else {
+            let path_remove_slash = &ctx.remain_path[1..];
             for (target_path, sub_router) in &self.table {
-                if ctx.remain_path.starts_with(target_path.as_ref()) {
-                    if ctx.remain_path.len() == target_path.len() {
+                if path_remove_slash.starts_with(target_path.as_ref()) {
+                    if path_remove_slash.len() == target_path.len() {
                         ctx.remain_path = "";
-                    } else if ctx.remain_path[target_path.len()..].starts_with('/') {
-                        ctx.remain_path = &ctx.remain_path[(target_path.len() + 1)..];
+                    } else if path_remove_slash[target_path.len()..].starts_with('/') {
+                        ctx.remain_path = &path_remove_slash[target_path.len()..];
                     } else {
                         continue;
                     }

@@ -3,7 +3,7 @@ use {
     std::sync::Arc,
 };
 
-/// The context a middleware will works on
+/// The context middleware works on
 #[allow(missing_debug_implementations)]
 pub struct Context<'x, Ex> {
     /// The incoming http request
@@ -20,12 +20,13 @@ impl<'x, Ex> Context<'x, Ex>
 where
     Ex: Send + Sync + 'static,
 {
-    /// Run all inner middleware, it drives the middleware system.
+    /// Run all inner middleware, this method drives the middleware system.
     ///
     /// Notice that you are **not must** call this func in all middleware. if you do not call it
     /// inner middleware will simply not be executed.
     ///
-    /// A second call to this func do nothing and return's a `Ok(())`.
+    /// A second call to this method on the same instance will do nothing and directly returns a
+    /// `Ok(())`.
     pub async fn next(&mut self) -> Result {
         if let Some((current, tail)) = self.tail.split_first() {
             self.tail = tail;
@@ -47,9 +48,10 @@ where
     /// It's differ from `Context.req.url().path()`, path returned by this method will only contains
     /// sub paths that haven't matched by any [`Router`] middleware.
     ///
-    /// TODO: a example
+    /// See [`examples/router.rs`] for a example.
     ///
     /// [`Router`]: middleware/struct.Router.html
+    /// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
     pub fn path(&self) -> &str {
         self.remain_path
     }

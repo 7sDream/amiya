@@ -11,7 +11,7 @@ struct ExData {
 fn main() {
     let ex = common::global_executor();
 
-    let amiya = amiya::new()
+    let amiya = amiya::with_ex()
         // Amiya support extra data attach in context, just set it's type as second argument
         .uses(m!(ctx: ExData => {
             println!(

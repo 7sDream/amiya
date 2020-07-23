@@ -21,6 +21,10 @@ fn main() {
             // but we not finish this setting here, a call to `fallback` let you set the
             // handler of all other request just except exact match
             // `get` limit we only support get method for static files
+            //
+            // the `ctx.path()` here will return path after `/static`, for example:
+            // response of request GET "/static/sub/folder/a.png"
+            // will be "Get file /sub/folder/a.png"
             .fallback().get(m!(ctx => response(format!("Get file {}\n", ctx.path()), ctx).await))
             // and we finish "/static" router setting
             .done());

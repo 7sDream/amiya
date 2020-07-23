@@ -1,6 +1,6 @@
 # Amiya
 
-[![][doc-badge-img]][doc-gh-pages]
+[![][doc-badge-img]][doc-home]
 
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
@@ -61,8 +61,9 @@ $ cargo run --example # show example list
 $ cargo run --example hello # run hello
 ```
 
-[Document of Amiya struct][doc-struct-Amiya] has some brief description of concept you need to 
-understand before use it, you can check/run other examples after read it:
+Top level document of crate has [a brief description of concepts][doc-concepts] we used in this
+framework, I recommend read it first, and then check those examples to get a more intuitive
+understanding:
 
 - Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
 - How to store extra data in context: [`examples/extra.rs`]
@@ -73,9 +74,9 @@ understand before use it, you can check/run other examples after read it:
 
 BSD 3-Clause Clear License, See [`LICENSE`].
 
-[doc-badge-img]: https://img.shields.io/badge/docs-on_github_pages-brightgreen?color=success&style=flat-square&logo=read-the-docs
-[doc-gh-pages]: https://7sdream.github.io/amiya/master/amiya
-[doc-struct-Amiya]: https://7sdream.github.io/amiya/master/amiya/struct.Amiya.html
+[doc-badge-img]: https://img.shields.io/badge/docs-on_github_pages-success?style=flat-square
+[doc-home]: https://7sdream.github.io/amiya/master/amiya
+[doc-concepts]: https://7sdream.github.io/amiya/master/amiya#concepts
 [`smol`]: https://github.com/stjepang/smol
 [`async-h1`]: https://github.com/http-rs/async-h1
 [`examples/hello.rs`]: https://github.com/7sDream/amiya/blob/master/examples/hello.rs

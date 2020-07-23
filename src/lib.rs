@@ -1,12 +1,5 @@
-//! # Amiya
-//!
-//! [![][doc-badge-img]][doc-gh-pages]
-//!
-//! Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
-//! [`smol`] async runtime.
-//!
-//! I, a newbie to Rust's async world, start to write Amiya as a personal study project to learn
-//! async related concept and practice.
+//! Amiya is a **experimental** middleware-based minimalism async HTTP server framework built up on
+//! the [`smol`] async runtime.
 //!
 //! It's currently still working in progress and in a very early alpha stage.
 //!
@@ -31,6 +24,112 @@
 //! many heap alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss
 //! compare to use `async-h1` directly.
 //!
+//! ## Concepts
+//!
+//! To understand how this framework works, there are some concept need to be described first.
+//!
+//! ### Request, Response and the process pipeline
+//!
+//! For every HTTP request comes to a Amiya server, the framework will create a [`Request`] struct
+//! to represent it. It's immutable in the whole request process pipeline.
+//!
+//! And a [`Response`] is created at the same time. It's a normal `200 OK` empty header empty body
+//! response at first, but it's mutable and can be edit by middleware.
+//!
+//! After all middleware has been executed, the [`Response`] maybe edited by many middleware, and
+//! as the final result we will send to the client.
+//!
+//! ### [`Middleware`]
+//!
+//! For ease of understanding, you can think this word is a abbreviation of "A function read
+//! some propety of [`Request`] and edit [`Response`]" or, a request handler, for now.
+//!
+//! ### [`Context`]
+//!
+//! But middleware do not works on [`Request`] and [`Response`] directly. [`Context`] wraps the
+//! immutable [`Request`] and editable [`Response`] with some other information and shortcut
+//! methods.
+//!
+//! ### Onion model
+//!
+//! The execution process of middleware uses the onion model:
+//!
+//! ![][img-onion-model]
+//!
+//! *We reuse this famous picture from Nodejs' [Koa] framework.*
+//!
+//! If we add middleware A, B and C to Amiya server, the running order(if not interrupted in the
+//! middle) will be: A -> B -> C -> C -> B -> A
+//!
+//! So every middleware will be executed twice, but this does not mean same code is executed twice.
+//!
+//! That's why [`next`] method exists.
+//!
+//! ### [`next`]
+//!
+//! The most important method [`Context`] gives us is [`next`].
+//!
+//! When a middleware calls `ctx.next().await`, the method will return after all inner middleware
+//! finish, or, some of them returns a Error.
+//!
+//! there is a simplest example:
+//!
+//! ```rust
+//! use amiya::{Context, Result, m};
+//!
+//! async fn A(mut ctx: Context<'_, ()>) -> Result {
+//!     println!("A - before");
+//!     ctx.next().await?;
+//!     println!("A - out");
+//!     Ok(())
+//! }
+//!
+//! async fn B(mut ctx: Context<'_, ()>) -> Result {
+//!     println!("B - before");
+//!     ctx.next().await?;
+//!     println!("B - out");
+//!     Ok(())
+//! }
+//!
+//! async fn C(mut ctx: Context<'_, ()>) -> Result {
+//!     println!("C - before");
+//!     ctx.next().await?;
+//!     println!("C - out");
+//!     Ok(())
+//! }
+//!
+//! let amiya = amiya::new().uses(m!(A)).uses(m!(B)).uses(m!(C));
+//! ```
+//!
+//! When a request in, the output will be:
+//!
+//! ```console
+//! A - before
+//! B - before
+//! C - before
+//! C - after
+//! B - after
+//! A - after
+//! ```
+//!
+//! You can referer to [`examples/middleware.rs`] for a more meaningful example.
+//!
+//! ### Middleware, the truth
+//!
+//! So with the help of [`next`] method, a middleware can not only be a request handler, it can be:
+//!
+//! - a error handler, by catpure inner middleware's return [`Result`])
+//! - a [`Router`], by looking the path then delegate the ctx to corresponding other middleware)
+//! - a Logger or time measurer, by print log before and after the [`next`] call)
+//! - etc...
+//!
+//! A middleware even does not have to call [`next`], in that statution no inner middlewares will
+//! be executed. Middleware like [`Router`] or login state checker can use this mechanism to make
+//! unprocessable requests responsed early.
+//!
+//! You can create you own [`Middleware`] by implement the trait for your type, or using the [`m`]
+//! macro, see their document for detail.
+//!
 //! ## Examples
 //!
 //! To start a very simple HTTP service that returns `Hello World` to the client in all paths:
@@ -51,39 +150,22 @@
 //!
 //! You can await or block on this `fut` to start the service.
 //!
-//! Notice any future need a async runtime to run, and that's not amiya's goal too. But you can
-//! refer to [`examples/hello.rs`] for a minimal example of how to start [`smol`] runtime.
+//! [`examples`] folder has more examples if you want to check.
 //!
-//! To run those examples, run
+//! [`Request`]: struct.Request.html
+//! [`Response`]: struct.Response.html
+//! [`Middleware`]: middleware/trait.Middleware.html
+//! [`Context`]: struct.Context.html
+//! [`next`]: struct.Context.html#method.next
+//! [`Result`]: type.Result.html
+//! [`Router`]: middleware/struct.Router.html
+//! [`m`]: macro.m.html
 //!
-//! ```bash
-//! $ cargo run --example # show example list
-//! $ cargo run --example hello # run hello
-//! ```
-//!
-//! [Document of Amiya struct][doc-struct-Amiya] has some brief description of concept you need to
-//! understand before use it, you can check/run other examples after read it:
-//!
-//! - Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
-//! - How to store extra data in context: [`examples/extra.rs`]
-//! - Use `Router` middleware for request diversion: [`examples/router.rs`]
-//! - Use another Amiya service as a middleware: [`examples/subapp.rs`]
-//!
-//! ## License
-//!
-//! BSD 3-Clause Clear License, See [`LICENSE`].
-//!
-//! [doc-badge-img]: https://img.shields.io/badge/docs-on_github_pages-success?style=flat-square&logo=read-the-docs
-//! [doc-gh-pages]: https://7sdream.github.io/amiya/master/amiya
 //! [`smol`]: https://github.com/stjepang/smol
 //! [`async-h1`]: https://github.com/http-rs/async-h1
-//! [doc-struct-Amiya]: struct.Amiya.html
-//! [`examples/hello.rs`]: https://github.com/7sDream/amiya/blob/master/examples/hello.rs
-//! [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
-//! [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
-//! [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
-//! [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
-//! [`LICENSE`]: https://github.com/7sDream/amiya/blob/master/LICENSE
+//! [img-onion-model]: https://rikka.7sdre.am/files/b1743b18-ba9f-4dc1-8c1d-15945978d0b1.png
+//! [Koa]: https://github.com/koajs/koa
+//! [`examples`]: https://github.com/7sDream/amiya/blob/master/examples
 
 #![deny(warnings)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
@@ -111,134 +193,27 @@ pub type Result<T = ()> = http_types::Result<T>;
 
 type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 
-/// Create a [`Amiya`] instance
+/// Create a [`Amiya`] instance with extra data type `()`.
 ///
 /// [`Amiya`]: struct.Amiya.html
-pub fn new<Ex>() -> Amiya<Ex> {
+pub fn new() -> Amiya<()> {
     Amiya::default()
 }
 
-/// Amiya Http Server.
+/// Create a [`Amiya`] instance with user defined extra data.
 ///
-/// For understand how this framework works, there are some concept need to be described first.
+/// [`Amiya`]: struct.Amiya.html
+pub fn with_ex<Ex>() -> Amiya<Ex> {
+    Amiya::default()
+}
+
+/// Amiya HTTP Server.
 ///
-/// ## Concepts
+/// Amiya itself also implement the [`Middleware`] trait and can be added to another Amiya
+/// instance, see [`examples/subapp.rs`] for a example.
 ///
-/// ### Request, Response and the process pipeline
-///
-/// For every HTTP request comes to a Amiya server, the framework will create a [`Request`] struct
-/// to represent it. It's immutable in the whole request process pipeline.
-///
-/// And a [`Response`] is created at the same time. It's a normal `200 OK` empty header empty body
-/// response at first, but it's mutable and can be edit by middleware.
-///
-/// After all middleware has been executed, the [`Response`] maybe edited by many middleware, and
-/// as the final result we will send to the client.
-///
-/// ### [`Middleware`]
-///
-/// For ease of understanding, you can think this word is a abbreviation of "A function read
-/// some propety of [`Request`] and edit [`Response`]" or, a Request Handler, for now.
-///
-/// ### [`Context`]
-///
-/// But middleware do not works on [`Request`] and [`Response`] directly. [`Context`] wraps the
-/// immutable [`Request`] and editable [`Response`] with some other information and shortcuts
-/// method.
-///
-/// ### Onion model
-///
-/// Middleware is controlled by a system using the onion model.
-///
-/// ![][img-onion-model]
-///
-/// *We reuse this famous picture from Nodejs' [Koa] framework.*
-///
-/// If we add middleware A, B and C to Amiya server, the running order will be(in normal
-/// condition): A -> B -> C -> C -> B -> A
-///
-/// So every middleware will be executed twice, but this not mean same code executed twice.
-///
-/// That's why [`next`] method exists.
-///
-/// ### [`next`]
-///
-/// The most important method [`Context`] given is [`next`].
-///
-/// When a middleware calls `ctx.next().await`, the method will return after all inner middleware
-/// finish.
-///
-/// there is a simplest example:
-///
-/// ```rust
-/// use amiya::{Context, Result, m};
-///
-/// async fn A(mut ctx: Context<'_, ()>) -> Result {
-///     println!("A - before");
-///     ctx.next().await?;
-///     println!("A - out");
-///     Ok(())
-/// }
-///
-/// async fn B(mut ctx: Context<'_, ()>) -> Result {
-///     println!("B - before");
-///     ctx.next().await?;
-///     println!("B - out");
-///     Ok(())
-/// }
-///
-/// async fn C(mut ctx: Context<'_, ()>) -> Result {
-///     println!("C - before");
-///     ctx.next().await?;
-///     println!("C - out");
-///     Ok(())
-/// }
-///
-/// let amiya = amiya::new().uses(m!(A)).uses(m!(B)).uses(m!(C));
-/// ```
-///
-/// When a request in, the output will be:
-///
-/// ```console
-/// A - before
-/// B - before
-/// C - before
-/// C - after
-/// B - after
-/// A - after
-/// ```
-///
-/// You can referer to [`examples/middleware.rs`] for a more meaningful example.
-///
-/// ### Middleware 2
-///
-/// So with the help of [`next`] method, a middleware can not noly be a request handler, it can be a
-/// error handler(by catpure inner middleware's return [`Result`]), a [`Router`] (by looking the
-/// path then delegate the ctx to corresponding other middleware), a Logger or Time measurer (by
-/// print log before and after the [`next`] call), etc...
-///
-/// And a middleware does not have to call [`next`], and in that statution no inner middlewares will
-/// be executed, middleware like [`Router`] or login state checker can use this mechanism to make
-/// unprocessable requests responsed early.
-///
-/// You can create you own [`Middleware`] by implement the trait for your type, or using the [`m`]
-/// macro, see their document for detail.
-///
-/// ## Examples
-///
-/// TODO: write a simple example
-///
-/// [`Request`]: struct.Request.html
-/// [`Response`]: struct.Response.html
 /// [`Middleware`]: middleware/trait.Middleware.html
-/// [`Context`]: struct.Context.html
-/// [Koa]: https://github.com/koajs/koa
-/// [`next`]: struct.Context.html#method.next
-/// [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
-/// [`Result`]: type.Result.html
-/// [`Router`]: middleware/struct.Router.html
-/// [`m`]: macro.m.html
-/// [img-onion-model]: https://rikka.7sdre.am/files/b1743b18-ba9f-4dc1-8c1d-15945978d0b1.png
+/// [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 #[allow(missing_debug_implementations)]
 pub struct Amiya<Ex = ()> {
     middleware_list: MiddlewareList<Ex>,
@@ -251,7 +226,7 @@ impl<Ex> Default for Amiya<Ex> {
 }
 
 impl<Ex> Amiya<Ex> {
-    /// Create a [`Amiya`] instance
+    /// Create a [`Amiya`] instance.
     ///
     /// [`Amiya`]: struct.Amiya
     pub fn new() -> Self {
@@ -263,9 +238,28 @@ impl<Ex> Amiya<Ex>
 where
     Ex: Send + Sync + 'static,
 {
-    /// Add a middleware to the end, you can create middleware by
-    /// implement the [`Middleware`] trait for your custom type or use the
-    /// [`m`] macro to convert a async func or closure.
+    /// Add a middleware to the end, middleware will be executed as the order of be added.  
+    ///
+    /// You can create middleware by implement the [`Middleware`] trait
+    /// for your custom type or use the [`m`] macro to convert a async func or closure.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use amiya::m;
+    ///
+    /// amiya::new().uses(m!(ctx => ctx.next().await));
+    /// ```
+    ///
+    /// ```rust
+    /// use amiya::{m, middleware::router};
+    ///
+    /// let router = router().endpoint().get(m!(
+    ///     ctx => ctx.resp.set_body("Hello world!");
+    /// ));
+    ///
+    /// amiya::new().uses(router);
+    /// ```
     ///
     /// [`Middleware`]: middleware/trait.Middleware.html
     /// [`m`]: macro.m.html
@@ -287,13 +281,40 @@ where
             resp: &mut resp,
             ex: &mut ex,
             tail: &tail,
-            remain_path: &req.url().path()[1..],
+            remain_path: req.url().path(),
         };
         ctx.next().await?;
         Ok(resp)
     }
 
-    /// Start Amiya app on `addr`
+    /// Run Amiya server on given `addr`
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// amiya::new().listen("127.0.0.1:8080");
+    /// ```
+    ///
+    /// ```rust
+    /// amiya::new().listen(("127.0.0.1", 8080));
+    /// ```
+    ///
+    /// ```rust
+    /// use std::net::Ipv4Addr;
+    ///
+    /// amiya::new().listen((Ipv4Addr::new(127, 0, 0, 1), 8080));
+    /// ```
+    ///
+    /// ```rust
+    /// use std::net::{SocketAddrV4, Ipv4Addr};
+    ///
+    /// let socket = SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 8080);
+    /// amiya::new().listen(socket);
+    /// ```
+    ///
+    /// ```rust
+    /// amiya::new().listen("[::]:8080");
+    /// ```
     pub async fn listen<A: AsyncToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
         let listener = TcpListener::bind(addr).await?;
         let middleware_list = Arc::new(self.middleware_list);
@@ -329,7 +350,7 @@ impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
             resp: ctx.resp,
             ex: ctx.ex,
             tail: &self.middleware_list[..],
-            remain_path: &ctx.remain_path,
+            remain_path: ctx.remain_path,
         };
         self_ctx.next().await?;
         ctx.next().await
