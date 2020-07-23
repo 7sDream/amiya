@@ -163,7 +163,7 @@
 //!
 //! [`smol`]: https://github.com/stjepang/smol
 //! [`async-h1`]: https://github.com/http-rs/async-h1
-//! [img-onion-model]: https://rikka.7sdre.am/files/b1743b18-ba9f-4dc1-8c1d-15945978d0b1.png
+//! [img-onion-model]: https://rikka.7sdre.am/files/774eff6f-9368-48d6-8bd2-1b547a74bc23.jpeg
 //! [Koa]: https://github.com/koajs/koa
 //! [`examples`]: https://github.com/7sDream/amiya/blob/master/examples
 
