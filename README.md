@@ -1,6 +1,7 @@
 # Amiya
 
-[![][github-badge-img]][github-home] [![][doc-badge-img]][doc-home] [![][workflow-badge-image]][workflow-page]
+[![][github-badge-img]][github-home] [![][doc-badge-img]][doc-home]
+[![][workflow-badge-image]][workflow-page]
 
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
@@ -25,7 +26,7 @@ The goal of this project is try to build a (by importance order):
 HTTP framework for myself to write simple web services.
 
 Amiya uses [`async-h1`] to parse and process requests, so only HTTP version 1.1 is supported for
-now. HTTP 2.0 is not in goal list, at least in the near future.
+now. HTTP 1.0 or 2.0 is not in goal list, at least in the near future.
 
 Performance is **NOT** in the list too, after all, Amiya is just a experimental for now, it uses
 many heap alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss 

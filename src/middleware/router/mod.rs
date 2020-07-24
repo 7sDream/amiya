@@ -65,6 +65,176 @@ macro_rules! impl_router_like_pub_fn {
 }
 
 /// The middleware for request diversion by path.
+///
+/// ## Concepts
+///
+/// There also are some important concepts need to be described first.
+///
+/// ### [`Router`]
+///
+/// A [`Router`] is some component that dispatch your [`Request`] to different handler(inner
+/// middleware) by looking it's [`path`].
+///
+/// So a router may store several middleware and choose zero or one of them for you when a request
+/// comes. If [`Request`]'s path match a router table item, it delegate [`Context`] to that
+/// corresponding middleware and do nothing else. If no item matches, it set [`Response`] to `404
+/// Not Found` and no stored middleware will be executed.
+///
+/// ### Router Table
+///
+/// [`Router`] has a `Path => Middleware` table to decided which middleware is respond for a
+/// request.
+///
+/// Each table item has different path, if you set a path twice, old one will replace the
+/// first.
+///
+/// Each path, is a full part in path when split by `/`, that is, if you set a item `"abc" =>
+/// middleware A`, the path `/abcde/somesub` will not be treated as a match. Only "/abc", "/abc/",
+/// "/abc/xxxxx/yyyy/zzzz" will.
+///
+/// ### Endpoint
+///
+/// Except router table, each has a endpoint middleware to handler condition that no more remain
+/// path can be used to determine which table item should be used.
+///
+/// A example:
+///
+/// ```
+/// # use amiya::{middleware::Router, m};
+/// let router = Router::new()
+///     .endpoint()
+///     .get(m!(ctx => ctx.resp.set_body("hit endpoint");))
+///     .at("v1").is(m!(ctx => ctx.resp.set_body("hit v1");));
+/// let main_router = Router::new().at("api").is(router);
+///
+/// let amiya = amiya::new().uses(main_router);
+/// ```
+///
+/// The `hit endpoint` will only be returned when request path is exactly `/api`, because after
+/// first match by `main_router`, remain path is empty, we can't match sub path on empty string.
+///
+/// ### Fallback
+///
+/// With the example above, if request path is `/api/`, the endpoint is not called, and because
+/// the `v1` item do not match remain path `/` too, so there is a mismatch.
+///
+/// If we do not add any code, this request will get a `404 Not Found` response. We have two option
+/// too add a handler for this request:
+///
+/// 1. use a empty path router table item: `.at("").uses(xxxx)`.
+/// 2. use a fallback handler: `.fallback().uses(xxxxx)`.
+///
+/// When remain path is not empty, but we can't find a matched router item, the fallback handler
+/// will be executed(only if we have set one, of course).
+///
+/// So if we choose the second option, the fallback is respond to all mismatched item, sometime
+/// this is what you want, and sometime not. Make sure choose the approch meets your need.
+///
+/// ## API Design
+///
+/// Because router can be nest, with many many levels, we need many code, many temp vars to build
+/// a multi level router. For reduce some ugly code, we designed a fluent api to construct this
+/// dendritical structure.
+///
+/// As described above, a [`Router`] has three property:
+///
+/// - Endpoint handler
+/// - Router table
+/// - Fallback handler
+///
+/// And we have three methods foo them:
+///
+/// - [`endpoint`]
+/// - [`at`]
+/// - [`fallback`]
+///
+/// ### Editing Environment
+///
+/// Let's start at the simplest method [`fallback`].
+///
+/// When we call [`fallback`] on a router, we do not set the middleware for this property, instead,
+/// we enter the fallback editing environment of this router.
+///
+/// In a edit environment, we can use serveral method to finish this editing and exit environment.
+///
+/// - any method of a [`MethodRouter`] like [`get`], [`post`], [`delete`], etc..
+/// - `uses` medhod of that non-public environment type.
+///
+/// A finish method comsumes the environment, set the property of editing target and returns it. So
+/// we can enter other propertie's editing environment to make more changes to it.
+///
+/// The [`endpoint`] editing enviorment is almost the same, except it sets the endpint handler.
+///
+/// But [`at`] method has a little difference. It does not enter router table editing environmen of
+/// `self`, but enter the [`endpoint`] editing environment of that corresponding router table item's
+/// middleware, a [`Router`] by default.
+///
+/// If we finish this editing, it returns a type representing that Router with `endpoint` set by the
+/// finish method. But we do not have to finish it. We can use `is` method to use a
+/// custom middleware in that router table item directly.
+///
+/// And a Router table item's endpoint editing environment also provided `fallback` and `at` method
+/// to enter the default sub Router's editing environment quickly without endpoint be setted.
+///
+/// if we finish set this sub router, a call of `done` method can actually add this item to parent's
+/// router table and returns parent router.
+///
+/// example:
+///
+/// ```
+/// # use amiya::{Context, middleware::Router, Result, m};
+///
+/// async fn xxx(ctx: Context<'_, ()>) -> Result { Ok(()) } // some middleware func
+///
+/// #[rustfmt::skip]
+/// let router = Router::new()
+///     // | this enter router table item "root"'s default router's endpoint
+///     // v editing environment
+///     .at("root")
+///         // | set "root" router's endpoint only support GET method, use middleware xxx
+///         // v this will return a type representing sub router
+///         .get(m!(xxx))
+///         // | end
+///         .fallback()  // <-- enter sub router's fallback editing endpoint
+///         // | set sub router's endpoint do not consider HTTP method and use middleware xxx directly
+///         // v This method returns the type representing sub router again
+///         .uses(m!(xxx))
+///         // | enter sub sub router's endpoint editing environment
+///         // v
+///         .at("sub")
+///             .is(m!(xxx))    // `is` make "sub" path directly uses xxx and do not need a router
+///         .done()             // `done` finish "root" router editing and returns the router we created first
+///     .at("another")          // we can continue add more item to the Router
+///         .is(m!(xxx));       // but for short we use a is here and finish router build.
+/// ```
+///
+/// Evert [`at`] has a matched `done` or `is`, remember this, then you can use this API to build a
+/// router tree without any temp variable.
+///
+/// I recommend use [`#[rustfmt::skip]`] to pervent `rustfmt` to format the router builder code
+/// section, because `rustfmt` will align use `.` and all method will have same indent. No indent
+/// means no multi level view, no level means we need to be very careful when add new path to old
+/// router.
+///
+/// ## Examples
+///
+/// see [`examples/router.rs`] and [`examples/subapp.rs`].
+///
+/// [`Router`]: #main
+/// [`Request`]: ../struct.Request.html
+/// [`path`]: ../struct.Context.html#method.path
+/// [`Context`]: ../struct.Context.html
+/// [`Response`]: ../struct.Response.html
+/// [`endpoint`]: #method.endpoint
+/// [`at`]: #method.at
+/// [`fallback`]: #method.fallback
+/// [`MethodRouter`]: struct.MethodRouter.html
+/// [`get`]: struct.MethodRouter.html#method.get
+/// [`post`]: struct.MethodRouter.html#method.post
+/// [`delete`]: struct.MethodRouter.html#method.delete
+/// [`#[rustfmt::skip]`]:https://github.com/rust-lang/rustfmt#tips
+/// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
+/// [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 #[allow(missing_debug_implementations)]
 pub struct Router<Ex> {
     endpoint: Option<Box<dyn Middleware<Ex>>>,

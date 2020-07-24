@@ -18,7 +18,7 @@
 //! HTTP framework for myself to write simple web services.
 //!
 //! Amiya uses [`async-h1`] to parse and process requests, so only HTTP version 1.1 is supported for
-//! now. HTTP 2.0 is not in goal list, at least in the near future.
+//! now. HTTP 1.0 or 2.0 is not in goal list, at least in the near future.
 //!
 //! Performance is **NOT** in the list too, after all, Amiya is just a experimental for now, it uses
 //! many heap alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss
@@ -77,28 +77,28 @@
 //! ```
 //! use amiya::{Context, Result, m};
 //!
-//! async fn A(mut ctx: Context<'_, ()>) -> Result {
+//! async fn a(mut ctx: Context<'_, ()>) -> Result {
 //!     println!("A - before");
 //!     ctx.next().await?;
 //!     println!("A - out");
 //!     Ok(())
 //! }
 //!
-//! async fn B(mut ctx: Context<'_, ()>) -> Result {
+//! async fn b(mut ctx: Context<'_, ()>) -> Result {
 //!     println!("B - before");
 //!     ctx.next().await?;
 //!     println!("B - out");
 //!     Ok(())
 //! }
 //!
-//! async fn C(mut ctx: Context<'_, ()>) -> Result {
+//! async fn c(mut ctx: Context<'_, ()>) -> Result {
 //!     println!("C - before");
 //!     ctx.next().await?;
 //!     println!("C - out");
 //!     Ok(())
 //! }
 //!
-//! let amiya = amiya::new().uses(m!(A)).uses(m!(B)).uses(m!(C));
+//! let amiya = amiya::new().uses(m!(a)).uses(m!(b)).uses(m!(c));
 //! ```
 //!
 //! When a request in, the output will be:
@@ -353,6 +353,8 @@ impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
             remain_path: ctx.remain_path,
         };
         self_ctx.next().await?;
+
+        // TODO: Do we need this? A service must be a endpoint, isn't it? TBD
         ctx.next().await
     }
 }
