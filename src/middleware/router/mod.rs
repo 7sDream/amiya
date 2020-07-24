@@ -211,7 +211,7 @@ macro_rules! impl_router_like_pub_fn {
 /// Evert [`at`] has a matched `done` or `is`, remember this, then you can use this API to build a
 /// router tree without any temp variable.
 ///
-/// I recommend use [`#[rustfmt::skip]`] to pervent `rustfmt` to format the router builder code
+/// I recommend use [`#[rustfmt::skip]`][rustfmt::skip] to pervent `rustfmt` to format the router builder code
 /// section, because `rustfmt` will align use `.` and all method will have same indent. No indent
 /// means no multi level view, no level means we need to be very careful when add new path to old
 /// router.
@@ -232,7 +232,7 @@ macro_rules! impl_router_like_pub_fn {
 /// [`get`]: struct.MethodRouter.html#method.get
 /// [`post`]: struct.MethodRouter.html#method.post
 /// [`delete`]: struct.MethodRouter.html#method.delete
-/// [`#[rustfmt::skip]`]:https://github.com/rust-lang/rustfmt#tips
+/// [rustfmt::skip]: https://github.com/rust-lang/rustfmt#tips
 /// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 /// [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 #[allow(missing_debug_implementations)]

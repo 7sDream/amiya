@@ -37,5 +37,5 @@ fn main() {
             Ok(())
         }));
 
-    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap()
+    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
 }
