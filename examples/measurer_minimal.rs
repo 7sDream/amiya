@@ -9,7 +9,7 @@ fn main() {
         .uses(m!(ctx =>
             let start = Instant::now();
             ctx.next().await?;
-            let measure = format!("req;dur={}us", start.elapsed().as_micros());
+            let measure = format!("req; dur={}us", start.elapsed().as_micros());
             ctx.resp.append_header("server-timing", measure);
         ))
         .uses(m!(ctx => ctx.resp.set_body("Finish");));

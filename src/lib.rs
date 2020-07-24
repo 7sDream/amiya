@@ -178,17 +178,17 @@ pub mod middleware;
 
 use {
     async_net::{AsyncToSocketAddrs, TcpListener},
-    async_trait::async_trait,
     std::{fmt::Debug, io, sync::Arc},
 };
 
 pub use {
+    async_trait::async_trait,
     context::Context,
     http_types::{Method, Request, Response, StatusCode},
     middleware::Middleware,
 };
 
-/// The Result type all middleware should returns
+/// The Result type all middleware should returns.
 pub type Result<T = ()> = http_types::Result<T>;
 
 type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;

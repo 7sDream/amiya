@@ -25,8 +25,6 @@ static ALL_METHODS: &'static [Method] = &[
 macro_rules! impl_method {
     ($(#[$outer:meta])*
     $func_name: ident : $method: expr => $ret: ty) => {
-        /// This method is auto generated, it's a proxy of `self.method($func_name, middleware)`
-        /// So, see `method` method of this type for document.
         $(#[$outer])*
         pub fn $func_name<M: Middleware<Ex> + 'static>(self, middleware: M) -> $ret {
             self.method($method, middleware)
@@ -44,14 +42,41 @@ macro_rules! impl_method {
 macro_rules! impl_all_http_method {
     ($ret: ty) => {
         impl_method! {
+            /// A shortcut of `self.method(Method::Get, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             get: Method::Get,
+            /// A shortcut of `self.method(Method::Head, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             head: Method::Head,
+            /// A shortcut of `self.method(Method::Post, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             post: Method::Post,
+            /// A shortcut of `self.method(Method::Put, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             put: Method::Put,
+            /// A shortcut of `self.method(Method::Delete, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             delete: Method::Delete,
+            /// A shortcut of `self.method(Method::Connect, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             connect: Method::Connect,
+            /// A shortcut of `self.method(Method::Options, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             options: Method::Options,
+            /// A shortcut of `self.method(Method::Trace, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             trace: Method::Trace,
+            /// A shortcut of `self.method(Method::Patch, middleware)`, see [`Self::method`].
+            ///
+            /// [`Self::method`]: #method.method
             patch: Method::Patch,
             => $ret
         }
@@ -71,7 +96,27 @@ macro_rules! impl_methods {
     };
 }
 
-/// MethodRouter middleware for request diversion by HTTP method
+/// The middleware for request diversion by HTTP method.
+///
+/// ## Examples
+///
+/// ```
+/// # use amiya::{middleware::MethodRouter, m};
+/// // Other HTTP methods that are not set will set resp to `405 Method Not Allowed`.
+/// let router = MethodRouter::new()
+///     .get(m!(ctx => ctx.resp.set_body("GET method");))
+///     .post(m!(ctx => ctx.resp.set_body("POST method");));
+/// ```
+///
+/// You can set same middleware for different methods by using [`methods`] method.
+///
+/// ```
+/// # use amiya::{middleware::MethodRouter, m, Method};
+/// let router = MethodRouter::new()
+///     .methods([Method::Get, Method::Post], m!(ctx => ctx.resp.set_body("Hello World");));
+/// ```
+///
+/// [`methods`]: #method.methods
 pub struct MethodRouter<Ex> {
     table: HashMap<Method, Arc<dyn Middleware<Ex>>>,
 }
@@ -94,14 +139,19 @@ impl<Ex> Debug for MethodRouter<Ex> {
 }
 
 impl<Ex> MethodRouter<Ex> {
-    /// Set given `middleware` as the handler of specific HTTP method when request hit this router
+    /// Create a new MethodRouter.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set given `middleware` as the handler of specific HTTP method when request hit this router.
     pub fn method<M: Middleware<Ex> + 'static>(mut self, method: Method, middleware: M) -> Self {
         let middleware: Arc<dyn Middleware<Ex>> = Arc::new(middleware);
         self.table.insert(method, Arc::clone(&middleware));
         self
     }
 
-    /// Set given `middleware` as the handler of different HTTP methods when request hit this router
+    /// Set given `middleware` as the handler of several HTTP methods when request hit this router.
     pub fn methods<H: AsRef<[Method]>, M: Middleware<Ex> + 'static>(
         mut self, methods: H, middleware: M,
     ) -> Self {
@@ -116,7 +166,8 @@ impl<Ex> MethodRouter<Ex> {
 
     impl_methods! {
         /// Set given `middleware` as the handler of all HTTP method, this method is almost useless
-        /// because in this case you can simply use that `middleware` and do not need a MethodRouter
+        /// because in this case you can use that `middleware` directly and do not need a
+        /// MethodRouter.
         all: ALL_METHODS,
     }
 }

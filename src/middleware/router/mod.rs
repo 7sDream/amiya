@@ -23,7 +23,7 @@ pub trait RouterLike<Ex>: Sized {
 #[macro_export]
 macro_rules! impl_router_like_pub_fn {
     ($ex: ty) => {
-        /// Enter endpoint edit environment
+        /// Enter endpoint edit environment.
         pub fn endpoint(
             self,
         ) -> $crate::middleware::router::setter::RouterSetter<
@@ -34,7 +34,8 @@ macro_rules! impl_router_like_pub_fn {
             $crate::middleware::router::setter::RouterSetter::new_endpoint_setter(self)
         }
 
-        /// Enter **endpoint** edit environment for router table's `path` item
+        /// Add a new item for `path` to router table and enter endpoint edit environment of
+        /// that item.
         pub fn at<P: Into<Cow<'static, str>>>(
             self, path: P,
         ) -> $crate::middleware::router::setter::RouterSetter<
@@ -50,7 +51,7 @@ macro_rules! impl_router_like_pub_fn {
                 .endpoint()
         }
 
-        /// Enter fallback edit environment
+        /// Enter fallback edit environment.
         pub fn fallback(
             self,
         ) -> $crate::middleware::router::setter::RouterSetter<
@@ -63,7 +64,7 @@ macro_rules! impl_router_like_pub_fn {
     };
 }
 
-/// Router middleware for request diversion
+/// The middleware for request diversion by path.
 #[allow(missing_debug_implementations)]
 pub struct Router<Ex> {
     endpoint: Option<Box<dyn Middleware<Ex>>>,
@@ -94,7 +95,7 @@ impl<Ex> RouterLike<Ex> for Router<Ex> {
 }
 
 impl<Ex> Router<Ex> {
-    /// Create new Router middleware
+    /// Create new Router middleware.
     pub fn new() -> Self {
         Self::default()
     }

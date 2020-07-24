@@ -1,8 +1,7 @@
 mod common;
 
 use {
-    amiya::{middleware::Middleware, Context, Result},
-    async_trait::async_trait,
+    amiya::{async_trait, Context, Middleware, Result},
     std::time::Instant,
 };
 
@@ -16,7 +15,7 @@ where
     async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result {
         let start = Instant::now();
         ctx.next().await?;
-        let measure = format!("req;dur={}us", start.elapsed().as_micros());
+        let measure = format!("req; dur={}us", start.elapsed().as_micros());
         ctx.resp.append_header("server-timing", measure);
         Ok(())
     }
