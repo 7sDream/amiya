@@ -1,6 +1,6 @@
 use {
-    crate::{middleware::Middleware, Request, Response, Result},
-    std::sync::Arc,
+    crate::{Middleware, Request, Response, Result},
+    std::{borrow::Cow, collections::HashMap, sync::Arc},
 };
 
 /// The context middleware works on.
@@ -13,6 +13,7 @@ pub struct Context<'x, Ex> {
     /// User defined extra data
     pub ex: &'x mut Ex,
     pub(crate) remain_path: &'x str,
+    pub(crate) router_matches: &'x mut HashMap<Cow<'static, str>, String>,
     pub(crate) tail: &'x [Arc<dyn Middleware<Ex>>],
 }
 
@@ -35,6 +36,7 @@ where
                 resp: self.resp,
                 ex: self.ex,
                 remain_path: self.remain_path,
+                router_matches: self.router_matches,
                 tail,
             };
             current.handle(next_ctx).await
@@ -54,5 +56,21 @@ where
     /// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
     pub fn path(&self) -> &str {
         self.remain_path
+    }
+
+    /// The path argument of `name`.
+    ///
+    /// Will be set if a router's any item `{name}` is matched.
+    ///
+    /// See *[Router - Any Item]* for more detail.
+    ///
+    /// ## Examples
+    ///
+    /// See [`examples/arg.rs`] for a example.
+    ///
+    /// [Router - Any Item]: middleware/struct.Router.html#any-item
+    /// [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
+    pub fn arg<K: AsRef<str>>(&self, name: K) -> Option<&str> {
+        self.router_matches.get(name.as_ref()).map(|s| s.as_str())
     }
 }

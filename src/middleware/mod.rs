@@ -10,7 +10,7 @@ use {
 
 pub use {
     m::M,
-    router::{router, MethodRouter, Router},
+    router::{MethodRouter, Router},
 };
 
 /// Use your custom type as a middleware by implement this trait.

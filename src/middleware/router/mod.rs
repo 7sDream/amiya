@@ -92,6 +92,21 @@ macro_rules! impl_router_like_pub_fn {
 /// middleware A`, the path `/abcde/somesub` will not be treated as a match. Only "/abc", "/abc/",
 /// "/abc/xxxxx/yyyy/zzzz" will.
 ///
+/// You can use [`at`] method to edit router table, for example: `at("abc")` will start a router
+/// table item edit environment for sub path `/abc`.
+///
+/// ### Any Item
+///
+/// There is a special router item called `any`, you can set it by use `at("{arg_name}")`.
+///
+/// This item will match when all router table items do not match the remain path, and remain path
+/// is not just `/`. That is, remain path have sub folder.
+///
+/// At this condition, the `any` item will match next sub folder, and store this folder name as a
+/// match result in  [`Context`], you can use [`Context::arg`] to get it.
+///
+/// see [`examples/arg.rs`] for a example code.
+///
 /// ### Endpoint
 ///
 /// Except router table, each has a endpoint middleware to handler condition that no more remain
@@ -218,12 +233,13 @@ macro_rules! impl_router_like_pub_fn {
 ///
 /// ## Examples
 ///
-/// see [`examples/router.rs`] and [`examples/subapp.rs`].
+/// see [`examples/router.rs`], [`examples/arg.rs`] and [`examples/subapp.rs`].
 ///
 /// [`Router`]: #main
 /// [`Request`]: ../struct.Request.html
 /// [`path`]: ../struct.Context.html#method.path
 /// [`Context`]: ../struct.Context.html
+/// [`Context::arg`]: ../struct.Context.html#method.arg
 /// [`Response`]: ../struct.Response.html
 /// [`endpoint`]: #method.endpoint
 /// [`at`]: #method.at
@@ -233,18 +249,20 @@ macro_rules! impl_router_like_pub_fn {
 /// [`post`]: struct.MethodRouter.html#method.post
 /// [`delete`]: struct.MethodRouter.html#method.delete
 /// [rustfmt::skip]: https://github.com/rust-lang/rustfmt#tips
+/// [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
 /// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 /// [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 #[allow(missing_debug_implementations)]
 pub struct Router<Ex> {
     endpoint: Option<Box<dyn Middleware<Ex>>>,
     fallback: Option<Box<dyn Middleware<Ex>>>,
+    any: Option<(Cow<'static, str>, Box<dyn Middleware<Ex>>)>,
     table: HashMap<Cow<'static, str>, Box<dyn Middleware<Ex>>>,
 }
 
 impl<Ex> Default for Router<Ex> {
     fn default() -> Self {
-        Self { endpoint: None, fallback: None, table: HashMap::new() }
+        Self { endpoint: None, fallback: None, any: None, table: HashMap::new() }
     }
 }
 
@@ -260,7 +278,21 @@ impl<Ex> RouterLike<Ex> for Router<Ex> {
     fn insert_to_router_table<P: Into<Cow<'static, str>>, M: Middleware<Ex> + 'static>(
         &mut self, path: P, middleware: M,
     ) {
-        self.table.insert(path.into(), Box::new(middleware));
+        let path = path.into();
+        if path.starts_with('{') && path.ends_with('}') {
+            match path {
+                Cow::Owned(path) => {
+                    let key = &path[1..path.len() - 1];
+                    self.any.replace((Cow::from(key.to_string()), Box::new(middleware)));
+                }
+                Cow::Borrowed(path) => {
+                    let key = &path[1..path.len() - 1];
+                    self.any.replace((Cow::from(key), Box::new(middleware)));
+                }
+            }
+        } else {
+            self.table.insert(path, Box::new(middleware));
+        }
     }
 }
 
@@ -271,13 +303,6 @@ impl<Ex> Router<Ex> {
     }
 
     impl_router_like_pub_fn! { Ex }
-}
-
-/// Create new Router middleware, see [`Router`] for detail.
-///
-/// [`Router`]: struct.Router.html
-pub fn router<Ex>() -> Router<Ex> {
-    Router::default()
 }
 
 #[async_trait]
@@ -291,17 +316,33 @@ where
                 return endpoint.handle(ctx).await;
             }
         } else {
-            let path_remove_slash = &ctx.remain_path[1..];
+            let path = &ctx.remain_path[1..];
             for (target_path, sub_router) in &self.table {
-                if path_remove_slash.starts_with(target_path.as_ref()) {
-                    if path_remove_slash.len() == target_path.len() {
+                if path.starts_with(target_path.as_ref()) {
+                    if path.len() == target_path.len() {
                         ctx.remain_path = "";
-                    } else if path_remove_slash[target_path.len()..].starts_with('/') {
-                        ctx.remain_path = &path_remove_slash[target_path.len()..];
+                    } else if path[target_path.len()..].starts_with('/') {
+                        ctx.remain_path = &path[target_path.len()..];
                     } else {
                         continue;
                     }
                     return sub_router.handle(ctx).await;
+                }
+            }
+
+            if let Some((ref k, ref any)) = self.any {
+                if !path.is_empty() && !path.starts_with('/') {
+                    let next_slash = path.find('/');
+                    let pos = if let Some(pos) = next_slash {
+                        ctx.remain_path = &path[pos..];
+                        pos
+                    } else {
+                        ctx.remain_path = "";
+                        path.len()
+                    };
+                    let value = &path[0..pos];
+                    ctx.router_matches.insert(k.clone(), value.to_string());
+                    return any.handle(ctx).await;
                 }
             }
 

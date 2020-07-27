@@ -178,7 +178,7 @@ pub mod middleware;
 
 use {
     async_net::{AsyncToSocketAddrs, TcpListener},
-    std::{fmt::Debug, io, sync::Arc},
+    std::{collections::HashMap, fmt::Debug, io, sync::Arc},
 };
 
 pub use {
@@ -252,9 +252,9 @@ where
     /// ```
     ///
     /// ```
-    /// use amiya::{m, middleware::router};
+    /// use amiya::{m, middleware::Router};
     ///
-    /// let router = router().endpoint().get(m!(
+    /// let router = Router::new().endpoint().get(m!(
     ///     ctx => ctx.resp.set_body("Hello world!");
     /// ));
     ///
@@ -276,12 +276,14 @@ where
     async fn serve(tail: Arc<MiddlewareList<Ex>>, req: Request) -> Result<Response> {
         let mut ex = Ex::default();
         let mut resp = Response::new(StatusCode::Ok);
+        let mut router_matches = HashMap::new();
         let mut ctx = Context {
             req: &req,
             resp: &mut resp,
             ex: &mut ex,
             tail: &tail,
             remain_path: req.url().path(),
+            router_matches: &mut router_matches,
         };
         ctx.next().await?;
         Ok(resp)
@@ -344,13 +346,14 @@ where
 
 #[async_trait]
 impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
-    async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result<()> {
+    async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result {
         let mut self_ctx = Context {
             req: ctx.req,
             resp: ctx.resp,
             ex: ctx.ex,
             tail: &self.middleware_list[..],
             remain_path: ctx.remain_path,
+            router_matches: ctx.router_matches,
         };
         self_ctx.next().await?;
 
