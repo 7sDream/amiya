@@ -35,3 +35,9 @@ fn main() {
 
     blocking::block_on(ex.spawn(app.listen("[::]:8080"))).unwrap();
 }
+
+// visit /status/200 => http status 200
+// visit /status/502 => http status 502
+// ... etc ...
+// visit /status/<can not convert to a valid http status code> => http status 400(Bad Request)
+// visit other path => http status 404
