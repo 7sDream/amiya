@@ -8,6 +8,7 @@ fn main() {
         ctx.resp.set_body(format!("Hello World from: {}", ctx.path()));
     ));
 
-    // bellow code start amiya in that runtime and blocking current thread on it
+    // bellow code run amiya in smol runtime and blocking current thread on it
+    // see smol 0.3.x document for more info.
     smol::run(app.listen("[::]:8080")).unwrap();
 }

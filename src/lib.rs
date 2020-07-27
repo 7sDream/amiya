@@ -120,7 +120,7 @@
 //!
 //! - a error handler, by catpure inner middleware's return [`Result`])
 //! - a [`Router`], by looking the path then delegate the ctx to corresponding other middleware)
-//! - a Logger or time measurer, by print log before and after the [`next`] call)
+//! - a Logger or [time measurer], by print log before and after the [`next`] call)
 //! - etc...
 //!
 //! A middleware even does not have to call [`next`], in that statution no inner middlewares will
@@ -165,6 +165,8 @@
 //! [`async-h1`]: https://github.com/http-rs/async-h1
 //! [img-onion-model]: https://rikka.7sdre.am/files/774eff6f-9368-48d6-8bd2-1b547a74bc23.jpeg
 //! [Koa]: https://github.com/koajs/koa
+//! [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
+//! [time measurer]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 //! [`examples`]: https://github.com/7sDream/amiya/blob/master/examples
 
 #![deny(warnings)]
