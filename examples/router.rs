@@ -6,10 +6,8 @@ use {
 };
 
 fn main() {
-    let ex = common::global_executor();
-
     #[rustfmt::skip]
-    let amiya = amiya::new().uses(Router::new()
+    let app = amiya::new().uses(Router::new()
         // `at` let you set the handler when exact meets the path,
         // `get` let you limit this path only accept get request and set the handler
         // `done` finish router setting for "/api/v1/hello"
@@ -29,5 +27,5 @@ fn main() {
             // and we finish "/static" router setting
             .done());
 
-    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
+    smol::run(app.listen("[::]:8080")).unwrap();
 }

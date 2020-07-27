@@ -1,5 +1,3 @@
-mod common;
-
 use amiya::m;
 
 // Extra data of Amiya must be Default + Send + Sync, and can't contain reference
@@ -9,9 +7,7 @@ struct ExData {
 }
 
 fn main() {
-    let ex = common::global_executor();
-
-    let amiya = amiya::with_ex()
+    let app = amiya::with_ex()
         // Amiya support extra data attach in context, just set it's type as second argument
         .uses(m!(ctx: ExData => {
             println!(
@@ -37,5 +33,5 @@ fn main() {
             Ok(())
         }));
 
-    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
+    smol::run(app.listen("[::]:8080")).unwrap();
 }

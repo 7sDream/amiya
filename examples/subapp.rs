@@ -6,8 +6,6 @@ use {
 };
 
 fn main() {
-    let ex = common::global_executor();
-
     #[rustfmt::skip]
     let api_server = Router::new().at("v1")
         // When we do not want to set the exact match handler, you can directly call a new `at`
@@ -34,12 +32,12 @@ fn main() {
         );
 
     #[rustfmt::skip]
-    let amiya = amiya::new().uses(Router::new()
+    let app = amiya::new().uses(Router::new()
         // `is` use the middleware you give as the path's handler, no matter exact match or sub match
         .at("api").is(api_server)
         // You can use another Amiya server as a middleware too,
         // so the static files server handler all request under "/static" path
         .at("static").is(static_files_server));
 
-    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
+    smol::run(app.listen("[::]:8080")).unwrap();
 }

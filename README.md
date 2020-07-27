@@ -53,7 +53,7 @@ fn main() {
 You can await or block on this `fut` to start the service.
 
 Notice any future need a async runtime to run, and that's not amiya's goal too. But you can
-refer to [`examples/hello.rs`] for a minimal example of how to start [`smol`] runtime.
+refer to [`examples/hello.rs`] for a minimal example of how to use [`smol`] runtime.
 
 To run those examples, run
 
@@ -70,6 +70,7 @@ understanding:
 - Write a custom middleware type: [`examples/measurer.rs`]
 - How to store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
+- How to match part of path as a argument: [`examples/arg.rs`]
 - Use another Amiya service as a middleware: [`examples/subapp.rs`]
 
 ## License
@@ -90,5 +91,6 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 [`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
 [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
+[`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
 [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 [`LICENSE`]: https://github.com/7sDream/amiya/blob/master/LICENSE

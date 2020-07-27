@@ -1,5 +1,3 @@
-mod common;
-
 use {
     amiya::{async_trait, Context, Middleware, Result},
     std::time::Instant,
@@ -36,20 +34,18 @@ where
 }
 
 fn main() {
-    let ex = common::global_executor();
-
     let app = amiya::new().uses(TimeMeasurer).uses(RequestHandler);
 
-    blocking::block_on(ex.spawn(app.listen("[::]:8080"))).unwrap();
-
-    // < HTTP/1.1 200 OK
-    // < content-length: 6
-    // < date: Thu, 23 Jul 2020 15:50:07 GMT
-    // < content-type: text/plain;charset=utf-8
-    // < server-timing: req;dur=9us                     <------------- Added by TimeMeasurer
-    // <
-    // * Connection #0 to host localhost left intact
-    // Finish* Closing connection 0                     <------------- Set by RequestHandler
+    smol::run(app.listen("[::]:8080")).unwrap();
 }
+
+// < HTTP/1.1 200 OK
+// < content-length: 6
+// < date: Thu, 23 Jul 2020 15:50:07 GMT
+// < content-type: text/plain;charset=utf-8
+// < server-timing: req;dur=9us                     <------------- Added by TimeMeasurer
+// <
+// * Connection #0 to host localhost left intact
+// Finish* Closing connection 0                     <------------- Set by RequestHandler
 
 // Referer to `examples/measurer_minimal.rs` to see how to macro `m` to achieve the same result

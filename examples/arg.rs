@@ -1,5 +1,3 @@
-mod common;
-
 use {
     amiya::{m, middleware::Router, Context, Result, StatusCode},
     std::convert::TryInto,
@@ -22,8 +20,6 @@ async fn return_status_code(mut ctx: Context<'_, ()>) -> Result {
 }
 
 fn main() {
-    let ex = common::global_executor();
-
     // Any path matches /status/{status_code}
     #[rustfmt::skip]
     let router = Router::new()
@@ -33,7 +29,7 @@ fn main() {
 
     let app = amiya::new().uses(router);
 
-    blocking::block_on(ex.spawn(app.listen("[::]:8080"))).unwrap();
+    smol::run(app.listen("[::]:8080")).unwrap();
 }
 
 // visit /status/200 => http status 200

@@ -1,17 +1,13 @@
-mod common;
-
 use amiya::m;
 
 fn main() {
-    let ex = common::global_executor();
-
     // The middleware system of Amiya uses onion model, just as NodeJs's koa framework.
     // The executed order is:
     //   - `Logger`'s code before `next()`, which print a log about request in
     //   - `Respond`'s code before `next()`, which do nothing
     //   - `Respond`'s code after `next()`, which set the response body
     //   - `Logger`'s code after `next()`, which read the response body and log it
-    let amiya = amiya::new()
+    let app = amiya::new()
         // Let's call This middleware `Logger`
         // `ctx.next().await` will return after all inner middleware be executed
         // so the `content` will be "Hello World" , which is set by next middleware.
@@ -29,5 +25,5 @@ fn main() {
             ctx.resp.set_body("Hello World!");
         ));
 
-    blocking::block_on(ex.spawn(amiya.listen("[::]:8080"))).unwrap();
+    smol::run(app.listen("[::]:8080")).unwrap();
 }
