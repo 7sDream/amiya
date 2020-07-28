@@ -67,12 +67,12 @@ framework, I recommend read it first, and then check those examples to get a mor
 understanding:
 
 - Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
-- Write a custom middleware type: [`examples/measurer.rs`]
-- How to store extra data in context: [`examples/extra.rs`]
+- Use a custom type as middleware: [`examples/measurer.rs`]
+- Store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
-- How to parse query string to map or custom struct: [`examples/query.rs`]
-- How to match part of path as a argument: [`examples/arg.rs`]
-- Use another Amiya service as a middleware: [`examples/subapp.rs`]
+- Parse query string to map or custom struct: [`examples/query.rs`]
+- Match part of path as an argument: [`examples/arg.rs`]
+- Use another Amiya app as middleware: [`examples/subapp.rs`]
 
 ## License
 
