@@ -226,10 +226,10 @@ macro_rules! impl_router_like_pub_fn {
 /// Evert [`at`] has a matched `done` or `is`, remember this, then you can use this API to build a
 /// router tree without any temp variable.
 ///
-/// I recommend use [`#[rustfmt::skip]`][rustfmt::skip] to pervent `rustfmt` to format the router builder code
-/// section, because `rustfmt` will align use `.` and all method will have same indent. No indent
-/// means no multi level view, no level means we need to be very careful when add new path to old
-/// router.
+/// Because that `rustfmt` align code using `.`, and all chain method call have same indent.
+/// No indent means no multi level view, no level means we need to be very careful when add
+/// new path to old router. So I recommend use [`#[rustfmt::skip]`][rustfmt::skip] to pervent
+/// `rustfmt` to format the router creating code section and indent router code by hand.
 ///
 /// ## Examples
 ///
