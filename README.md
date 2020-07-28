@@ -70,6 +70,7 @@ understanding:
 - Write a custom middleware type: [`examples/measurer.rs`]
 - How to store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
+- How to parse query string to map or custom struct: [`examples/query.rs`]
 - How to match part of path as a argument: [`examples/arg.rs`]
 - Use another Amiya service as a middleware: [`examples/subapp.rs`]
 
@@ -90,6 +91,7 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
 [`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
+[`examples/query.rs`]: https://github.com/7sDream/amiya/blob/master/examples/query.rs
 [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
 [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs

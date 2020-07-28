@@ -150,7 +150,7 @@
 //!
 //! You can await or block on this `fut` to start the service.
 //!
-//! [`examples`] folder has more examples if you want to check.
+//! See *[Readme - Examples]* section for more examples to check.
 //!
 //! [`Request`]: struct.Request.html
 //! [`Response`]: struct.Response.html
@@ -167,7 +167,7 @@
 //! [Koa]: https://github.com/koajs/koa
 //! [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
 //! [time measurer]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
-//! [`examples`]: https://github.com/7sDream/amiya/blob/master/examples
+//! [Readme - Examples]: https://github.com/7sDream/amiya#examples
 
 #![deny(warnings)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
