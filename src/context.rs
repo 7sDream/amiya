@@ -1,17 +1,21 @@
 use {
     crate::{Middleware, Request, Response, Result},
+    http_types::Body,
     std::{borrow::Cow, collections::HashMap, sync::Arc},
 };
 
 /// The context middleware works on.
 #[allow(missing_debug_implementations)]
 pub struct Context<'x, Ex> {
-    /// The incoming http request
+    /// The incoming http request, without body. You can use [`Context::body`] method to get body.
+    ///
+    /// [`Context::body`]: #method.body
     pub req: &'x Request,
     /// The output http response, you can directly edit it
     pub resp: &'x mut Response,
     /// User defined extra data
     pub ex: &'x mut Ex,
+    pub(crate) body: &'x mut Option<Body>,
     pub(crate) remain_path: &'x str,
     pub(crate) router_matches: &'x mut HashMap<Cow<'static, str>, String>,
     pub(crate) tail: &'x [Arc<dyn Middleware<Ex>>],
@@ -33,6 +37,7 @@ where
             self.tail = tail;
             let next_ctx = Context {
                 req: self.req,
+                body: self.body,
                 resp: self.resp,
                 ex: self.ex,
                 remain_path: self.remain_path,
@@ -43,6 +48,11 @@ where
         } else {
             Ok(())
         }
+    }
+
+    /// Get incoming request body data. Only the first call will return `Some`.
+    pub fn body(&mut self) -> Option<Body> {
+        self.body.take()
     }
 
     /// The path the next router can match.

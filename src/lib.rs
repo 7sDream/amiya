@@ -186,7 +186,7 @@ use {
 pub use {
     async_trait::async_trait,
     context::Context,
-    http_types::{Method, Request, Response, StatusCode},
+    http_types::{Method, Mime, Request, Response, StatusCode},
     middleware::Middleware,
 };
 
@@ -275,12 +275,14 @@ impl<Ex> Amiya<Ex>
 where
     Ex: Default + Send + Sync + 'static,
 {
-    async fn serve(tail: Arc<MiddlewareList<Ex>>, req: Request) -> Result<Response> {
+    async fn serve(tail: Arc<MiddlewareList<Ex>>, mut req: Request) -> Result<Response> {
         let mut ex = Ex::default();
         let mut resp = Response::new(StatusCode::Ok);
         let mut router_matches = HashMap::new();
+        let mut body = Some(req.take_body());
         let mut ctx = Context {
             req: &req,
+            body: &mut body,
             resp: &mut resp,
             ex: &mut ex,
             tail: &tail,
@@ -351,6 +353,7 @@ impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
     async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result {
         let mut self_ctx = Context {
             req: ctx.req,
+            body: ctx.body,
             resp: ctx.resp,
             ex: ctx.ex,
             tail: &self.middleware_list[..],
@@ -358,8 +361,6 @@ impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
             router_matches: ctx.router_matches,
         };
         self_ctx.next().await?;
-
-        // TODO: Do we need this? A service must be a endpoint, isn't it? TBD
         ctx.next().await
     }
 }

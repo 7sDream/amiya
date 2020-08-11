@@ -22,17 +22,16 @@ struct SearchQuery {
 }
 
 async fn parse_query_struct(mut ctx: Context<'_, ()>) -> Result {
-    let search: SearchQuery = if let Ok(query) = ctx.req.query() {
+    let query: SearchQuery = if let Ok(query) = ctx.req.query() {
         query
     } else {
         ctx.resp.set_status(StatusCode::BadRequest);
-        ctx.resp.set_body("Invalid query");
         return Ok(());
     };
 
     ctx.next().await?;
 
-    ctx.resp.set_body(serde_json::to_string(&search).unwrap());
+    ctx.resp.set_body(serde_json::to_value(query)?);
 
     Ok(())
 }
