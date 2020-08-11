@@ -6,7 +6,7 @@
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
 
-I, a newbie to Rust's async world, start to write Amiya as a personal study project to learn 
+I, a newbie to Rust's async world, start to write Amiya as a personal study project to learn
 async related concept and practice.
 
 It's currently still working in progress and in a very early alpha stage.
@@ -17,7 +17,7 @@ API design may changes every day, **DO NOT** use it in any condition except for 
 
 The goal of this project is try to build a (by importance order):
 
-- Safe
+- Safe, with `#![forbid(unsafe_code)]`
 - Async
 - Minimalism
 - Easy to use
@@ -29,7 +29,7 @@ Amiya uses [`async-h1`] to parse and process requests, so only HTTP version 1.1 
 now. HTTP 1.0 or 2.0 is not in goal list, at least in the near future.
 
 Performance is **NOT** in the list too, after all, Amiya is just a experimental for now, it uses
-many heap alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss 
+many heap alloc (Box) and dynamic dispatch (Trait Object) so there may be some performance loss
 compare to use `async-h1` directly.
 
 ## Examples
@@ -70,7 +70,8 @@ understanding:
 - Use a custom type as middleware: [`examples/measurer.rs`]
 - Store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
-- Parse query string to map or custom struct: [`examples/query.rs`]
+- Parse query string to json value or custom struct: [`examples/query.rs`]
+- Parse body(www-form-urlencoded) to json value or custom struct: [`examples/urlencoded.rs`]
 - Match part of path as an argument: [`examples/arg.rs`]
 - Use another Amiya app as middleware: [`examples/subapp.rs`]
 
@@ -92,6 +93,7 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 [`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 [`examples/extra.rs`]: https://github.com/7sDream/amiya/blob/master/examples/extra.rs
 [`examples/query.rs`]: https://github.com/7sDream/amiya/blob/master/examples/query.rs
+[`examples/urlencoded.rs`]: https://github.com/7sDream/amiya/blob/master/examples/urlencoded.rs
 [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
 [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs

@@ -9,7 +9,7 @@
 //!
 //! The goal of this project is try to build a (by importance order):
 //!
-//! - Safe
+//! - Safe, with `#![forbid(unsafe_code)]`
 //! - Async
 //! - Minimalism
 //! - Easy to use
@@ -21,7 +21,7 @@
 //! now. HTTP 1.0 or 2.0 is not in goal list, at least in the near future.
 //!
 //! Performance is **NOT** in the list too, after all, Amiya is just a experimental for now, it uses
-//! many heap alloc (Box) and Dynamic Dispatch (Trait Object) so there may be some performance loss
+//! many heap alloc (Box) and dynamic dispatch (Trait Object) so there may be some performance loss
 //! compare to use `async-h1` directly.
 //!
 //! ## Concepts
@@ -47,7 +47,7 @@
 //! ### [`Context`]
 //!
 //! But middleware do not works on [`Request`] and [`Response`] directly. [`Context`] wraps the
-//! immutable [`Request`] and editable [`Response`] with some other information and shortcut
+//! immutable [`Request`] and mutable [`Response`] with some other information and shortcut
 //! methods.
 //!
 //! ### Onion model
@@ -118,9 +118,9 @@
 //!
 //! So with the help of [`next`] method, a middleware can not only be a request handler, it can be:
 //!
-//! - a error handler, by catpure inner middleware's return [`Result`])
-//! - a [`Router`], by looking the path then delegate the ctx to corresponding other middleware)
-//! - a Logger or [time measurer], by print log before and after the [`next`] call)
+//! - a error handler, by catpure inner middleware's return [`Result`]
+//! - a [`Router`], by looking the path then delegate [`Context`] to other corresponding middleware
+//! - a access logger or [time measurer], by print log before and after the [`next`] call
 //! - etc...
 //!
 //! A middleware even does not have to call [`next`], in that statution no inner middlewares will
