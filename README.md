@@ -1,7 +1,6 @@
 # Amiya
 
 [![][github-badge-img]][github-home] [![][doc-badge-img]][doc-home]
-[![][workflow-badge-image]][workflow-page]
 
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
@@ -81,11 +80,9 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 
 [github-badge-img]: https://img.shields.io/badge/Github-7sDream%2Famiya-8da0cb?style=for-the-badge&labelColor=555555&logo=github
 [github-home]: https://github.com/7sDream/amiya
-[doc-badge-img]: https://img.shields.io/badge/docs-on_github_pages-66c2a5?style=for-the-badge&labelColor=555555&logo=read-the-docs
-[doc-home]: https://7sdream.github.io/amiya/master/amiya
-[workflow-badge-image]: https://img.shields.io/github/workflow/status/7sDream/amiya/DocPublishToGithubPages/master?style=for-the-badge&logo=github-actions
-[workflow-page]: https://github.com/7sDream/amiya/actions?query=workflow%3ADocPublishToGithubPages
-[doc-concepts]: https://7sdream.github.io/amiya/master/amiya#concepts
+[doc-badge-img]: https://img.shields.io/badge/docs-on_docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=read-the-docs
+[doc-home]: https://docs.rs/amiya/latest/amiya/
+[doc-concepts]: https://docs.rs/amiya/latest/amiya/#concepts
 [`smol`]: https://github.com/stjepang/smol
 [`async-h1`]: https://github.com/http-rs/async-h1
 [`examples/hello.rs`]: https://github.com/7sDream/amiya/blob/master/examples/hello.rs
