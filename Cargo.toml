@@ -1,6 +1,6 @@
 [package]
 name = "amiya"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["7sDream <i@7sdre.am>"]
 edition = "2018"
 description = "experimental middleware-based minimalism async HTTP server framework"
