@@ -176,16 +176,19 @@
 #![allow(clippy::module_name_repetitions)]
 
 mod context;
+mod executor;
 pub mod middleware;
 
 use {
-    async_net::{AsyncToSocketAddrs, TcpListener},
+    executor::SmolGlobalExecutor,
+    smol::net::{AsyncToSocketAddrs, TcpListener},
     std::{collections::HashMap, fmt::Debug, io, sync::Arc},
 };
 
 pub use {
     async_trait::async_trait,
     context::Context,
+    executor::Executor,
     http_types::{Method, Mime, Request, Response, StatusCode},
     middleware::Middleware,
 };
@@ -198,14 +201,14 @@ type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 /// Create a [`Amiya`] instance with extra data type `()`.
 ///
 /// [`Amiya`]: struct.Amiya.html
-pub fn new() -> Amiya<()> {
+pub fn new() -> Amiya<SmolGlobalExecutor, ()> {
     Amiya::default()
 }
 
 /// Create a [`Amiya`] instance with user defined extra data.
 ///
 /// [`Amiya`]: struct.Amiya.html
-pub fn with_ex<Ex>() -> Amiya<Ex> {
+pub fn with_ex<Ex>() -> Amiya<SmolGlobalExecutor, Ex> {
     Amiya::default()
 }
 
@@ -217,17 +220,21 @@ pub fn with_ex<Ex>() -> Amiya<Ex> {
 /// [`Middleware`]: middleware/trait.Middleware.html
 /// [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
 #[allow(missing_debug_implementations)]
-pub struct Amiya<Ex = ()> {
+pub struct Amiya<Exec, Ex = ()> {
+    executor: Exec,
     middleware_list: MiddlewareList<Ex>,
 }
 
-impl<Ex> Default for Amiya<Ex> {
+impl<Exec, Ex> Default for Amiya<Exec, Ex>
+where
+    Exec: Default,
+{
     fn default() -> Self {
-        Self { middleware_list: vec![] }
+        Self { executor: Exec::default(), middleware_list: vec![] }
     }
 }
 
-impl<Ex> Amiya<Ex> {
+impl<Ex> Amiya<SmolGlobalExecutor, Ex> {
     /// Create a [`Amiya`] instance.
     ///
     /// [`Amiya`]: struct.Amiya
@@ -236,7 +243,7 @@ impl<Ex> Amiya<Ex> {
     }
 }
 
-impl<Ex> Amiya<Ex>
+impl<Exec, Ex> Amiya<Exec, Ex>
 where
     Ex: Send + Sync + 'static,
 {
@@ -269,10 +276,16 @@ where
         self.middleware_list.push(Arc::new(middleware));
         self
     }
+
+    /// Set the executor.
+    pub fn executor<NewExec>(self, executor: NewExec) -> Amiya<NewExec, Ex> {
+        Amiya { executor, middleware_list: self.middleware_list }
+    }
 }
 
-impl<Ex> Amiya<Ex>
+impl<Exec, Ex> Amiya<Exec, Ex>
 where
+    Exec: Executor + 'static,
     Ex: Default + Send + Sync + 'static,
 {
     async fn serve(tail: Arc<MiddlewareList<Ex>>, mut req: Request) -> Result<Response> {
@@ -333,12 +346,11 @@ where
                         req.set_peer_addr(Some(client_addr));
                         Self::serve(Arc::clone(&middleware_list), req)
                     });
-                    smol::Task::spawn(async move {
+                    self.executor.spawn(async move {
                         if let Err(e) = serve.await {
                             eprintln!("Error when process request: {}", e);
                         }
-                    })
-                    .detach();
+                    });
                 }
                 Err(e) => {
                     eprintln!("Accept connection error: {}", e);
@@ -349,7 +361,11 @@ where
 }
 
 #[async_trait]
-impl<Ex: Send + Sync + 'static> Middleware<Ex> for Amiya<Ex> {
+impl<Exec, Ex> Middleware<Ex> for Amiya<Exec, Ex>
+where
+    Exec: Send + Sync,
+    Ex: Send + Sync + 'static,
+{
     async fn handle(&self, mut ctx: Context<'_, Ex>) -> Result {
         let mut self_ctx = Context {
             req: ctx.req,

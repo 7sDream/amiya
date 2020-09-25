@@ -50,5 +50,5 @@ fn main() {
 
     let app = amiya::new().uses(router);
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }

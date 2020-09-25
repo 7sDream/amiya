@@ -39,5 +39,5 @@ fn main() {
         // so the static files server handler all request under "/static" path
         .at("static").is(static_files_server));
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }

@@ -33,5 +33,5 @@ fn main() {
             Ok(())
         }));
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }

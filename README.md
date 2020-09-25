@@ -74,6 +74,8 @@ understanding:
 - Match part of path as an argument: [`examples/arg.rs`]
 - Use another Amiya app as middleware: [`examples/subapp.rs`]
 
+Most of those example will use default smol global executor(one work thread only), see [`example/multithread.rs`] for how to create a custom multi-thread executor and use it.
+
 ## License
 
 BSD 3-Clause Clear License, See [`LICENSE`].
@@ -94,4 +96,5 @@ BSD 3-Clause Clear License, See [`LICENSE`].
 [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
 [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
 [`examples/subapp.rs`]: https://github.com/7sDream/amiya/blob/master/examples/subapp.rs
+[`example/multithread.rs`]: https://github.com/7sDream/amiya/blob/master/examples/multithread.rs
 [`LICENSE`]: https://github.com/7sDream/amiya/blob/master/LICENSE

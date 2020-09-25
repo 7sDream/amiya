@@ -1,3 +1,5 @@
+mod common;
+
 use {
     amiya::{m, middleware::Router, Context, Result, StatusCode},
     std::convert::TryInto,
@@ -29,7 +31,7 @@ fn main() {
 
     let app = amiya::new().uses(router);
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }
 
 // visit /status/200 => http status 200

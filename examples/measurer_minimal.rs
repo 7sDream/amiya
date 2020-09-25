@@ -10,5 +10,5 @@ fn main() {
         ))
         .uses(m!(ctx => ctx.resp.set_body("Finish");));
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }

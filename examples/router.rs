@@ -27,5 +27,5 @@ fn main() {
             // and we finish "/static" router setting
             .done());
 
-    smol::run(app.listen("[::]:8080")).unwrap();
+    smol::block_on(app.listen("[::]:8080")).unwrap();
 }
