@@ -10,5 +10,7 @@ fn main() {
         ))
         .uses(m!(ctx => ctx.resp.set_body("Finish");));
 
-    smol::block_on(app.listen("[::]:8080")).unwrap();
+    app.listen("[::]:8080").unwrap();
+
+    std::thread::park();
 }

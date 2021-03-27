@@ -36,7 +36,9 @@ where
 fn main() {
     let app = amiya::new().uses(TimeMeasurer).uses(RequestHandler);
 
-    smol::block_on(app.listen("[::]:8080")).unwrap();
+    app.listen("[::]:8080").unwrap();
+
+    std::thread::park();
 }
 
 // < HTTP/1.1 200 OK

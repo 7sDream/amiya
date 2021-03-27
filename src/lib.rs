@@ -1,5 +1,5 @@
-//! Amiya is a **experimental** middleware-based minimalism async HTTP server framework built up on
-//! the [`smol`] async runtime.
+//! Amiya is a experimental middleware-based minimalism async HTTP server framework,
+//! built up on [`smol-rs`] related asynchronous components.
 //!
 //! It's currently still working in progress and in a very early alpha stage.
 //!
@@ -11,6 +11,7 @@
 //!
 //! - Safe, with `#![forbid(unsafe_code)]`
 //! - Async
+//! - Middleware-based
 //! - Minimalism
 //! - Easy to use
 //! - Easy to extend
@@ -141,12 +142,13 @@
 //!     ctx.resp.set_body(format!("Hello World from: {}", ctx.path()));
 //! ));
 //!
-//! let fut = app.listen("[::]:8080");
+//! app.listen("[::]:8080").unwrap();
 //!
-//! // ... start a async runtime and block on `fut` ...
+//! // ... do other things ...
 //! ```
 //!
-//! You can await or block on this `fut` to start the service.
+//! Amiya has a built-in multi-thread async executor powered by `async-executor` and `async-io`,
+//! amiya server will run in it. So `Amiya::listen` do not block your thread.
 //!
 //! See *[Readme - Examples]* section for more examples to check.
 //!
@@ -159,7 +161,7 @@
 //! [`Router`]: middleware/struct.Router.html
 //! [`m`]: macro.m.html
 //!
-//! [`smol`]: https://github.com/stjepang/smol
+//! [`smol-rs`]: https://github.com/smol-rs
 //! [`async-h1`]: https://github.com/http-rs/async-h1
 //! [img-onion-model]: https://rikka.7sdre.am/files/774eff6f-9368-48d6-8bd2-1b547a74bc23.jpeg
 //! [Pylons-concept-middleware]: https://docs.pylonsproject.org/projects/pylons-webframework/en/latest/concepts.html#wsgi-middleware
@@ -178,15 +180,15 @@ mod executor;
 pub mod middleware;
 
 use {
-    crate::executor::SmolGlobalExecutor,
-    smol::net::TcpListener,
+    async_channel::{Receiver, Sender},
+    async_net::TcpListener,
     std::{collections::HashMap, io, net::ToSocketAddrs, sync::Arc},
 };
 
 pub use {
     async_trait::async_trait,
     context::Context,
-    executor::Executor,
+    executor::{BuiltInExecutor, Executor},
     http_types::{Method, Mime, Request, Response, StatusCode},
     middleware::Middleware,
 };
@@ -194,13 +196,16 @@ pub use {
 /// The Result type all middleware should returns.
 pub type Result<T = ()> = http_types::Result<T>;
 
+/// The Error type of middleware result type.
+pub type Error = http_types::Error;
+
 type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 
 /// Create a [`Amiya`] instance with extra data type `()`.
 ///
 /// [`Amiya`]: struct.Amiya.html
 #[must_use]
-pub fn new() -> Amiya<SmolGlobalExecutor, ()> {
+pub fn new() -> Amiya<BuiltInExecutor, ()> {
     Amiya::default()
 }
 
@@ -208,7 +213,7 @@ pub fn new() -> Amiya<SmolGlobalExecutor, ()> {
 ///
 /// [`Amiya`]: struct.Amiya.html
 #[must_use]
-pub fn with_ex<Ex>() -> Amiya<SmolGlobalExecutor, Ex> {
+pub fn with_ex<Ex>() -> Amiya<BuiltInExecutor, Ex> {
     Amiya::default()
 }
 
@@ -225,22 +230,19 @@ pub struct Amiya<Exec, Ex = ()> {
     middleware_list: MiddlewareList<Ex>,
 }
 
-impl<Exec, Ex> Default for Amiya<Exec, Ex>
-where
-    Exec: Default,
-{
+impl<Ex> Default for Amiya<BuiltInExecutor, Ex> {
     fn default() -> Self {
-        Self { executor: Exec::default(), middleware_list: vec![] }
+        Self::new()
     }
 }
 
-impl<Ex> Amiya<SmolGlobalExecutor, Ex> {
+impl<Ex> Amiya<BuiltInExecutor, Ex> {
     /// Create a [`Amiya`] instance.
     ///
     /// [`Amiya`]: struct.Amiya
     #[must_use]
     pub fn new() -> Self {
-        Self::default()
+        Self { executor: BuiltInExecutor, middleware_list: MiddlewareList::default() }
     }
 }
 
@@ -284,6 +286,17 @@ where
     }
 
     /// Set the executor.
+    ///
+    /// Normal users do not need to call this method because Amiya has a built-in multi-thread
+    /// executor [`BuiltInExecutor`]. This method let you change it to your custom one.
+    ///
+    /// Your executor needs to implement the [`Executor`] trait.
+    ///
+    /// See [`examples/tokio_executor.rs`] for an example of use tokio async runtime.
+    ///
+    /// [`BuiltInExecutor`]: struct.BuiltInExecutor.html
+    /// [`Executor`]: trait.Executor.html
+    /// [`examples/tokio_executor.rs`]: https://github.com/7sDream/amiya/blob/master/examples/tokio_executor.rs
     pub fn executor<NewExec>(self, executor: NewExec) -> Amiya<NewExec, Ex> {
         Amiya { executor, middleware_list: self.middleware_list }
     }
@@ -312,7 +325,66 @@ where
         Ok(resp)
     }
 
-    /// Run Amiya server on given `addr`
+    async fn accepter(
+        listener: TcpListener, executor: Arc<Exec>, middleware_list: MiddlewareList<Ex>,
+        stop: Receiver<()>,
+    ) {
+        let middleware_list = Arc::new(middleware_list);
+        let mut forever = false;
+        loop {
+            let check_stop = if forever {
+                Ok(listener.accept().await)
+            } else {
+                let stop_fut = async { Err(stop.recv().await) };
+                let accept_fut = async { Ok(listener.accept().await) };
+                futures_lite::future::or(stop_fut, accept_fut).await
+            };
+            match check_stop {
+                // accept wins
+                Ok(listener_result) => match listener_result {
+                    Ok((stream, client_addr)) => {
+                        let middleware_list = Arc::clone(&middleware_list);
+                        let serve = async_h1::accept(stream, move |mut req| {
+                            req.set_peer_addr(Some(client_addr));
+                            Self::serve(Arc::clone(&middleware_list), req)
+                        });
+                        executor.spawn(async move {
+                            if let Err(e) = serve.await {
+                                log::error!(
+                                    "Request handle error: code = {}, type = {}, detail = {}",
+                                    e.status(),
+                                    e.type_name().unwrap_or("Unknown"),
+                                    e,
+                                );
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        log::warn!("Accept connection failed: {:?}", e);
+                    }
+                },
+                // stop signal wins
+                Err(signal) => {
+                    if signal.is_err() {
+                        // channel closed, user want the server runs forever
+                        forever = true;
+                    } else {
+                        // received stop signal
+                        log::info!("Amiya server stop listening {:?}", listener.local_addr());
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    /// start Amiya server on given `addr`.
+    ///
+    /// ## Return
+    ///
+    /// A bounded 1 capacity channel for stop the server.
+    ///
+    /// Amiya server will stop listening the `addr` when receive message from this channel.
     ///
     /// ## Examples
     ///
@@ -341,33 +413,26 @@ where
     /// amiya::new().listen("[::]:8080");
     /// ```
     ///
+    /// ```
+    /// let stop = amiya::new().listen("[::]:8080").unwrap();
+    /// // do other things
+    /// stop.try_send(()); // amiya http server will stop
+    /// ```
+    ///
     /// # Errors
     ///
     /// When listen provided address and port failed.
-    pub async fn listen<A: ToSocketAddrs + Send + Sync + 'static>(self, addr: A) -> io::Result<()> {
+    pub fn listen<A: ToSocketAddrs>(self, addr: A) -> io::Result<Sender<()>> {
         let addr = addr.to_socket_addrs()?.next().unwrap();
-        let listener = TcpListener::bind(addr).await?;
-        let middleware_list = Arc::new(self.middleware_list);
+        let listener = self.executor.block_on(TcpListener::bind(addr))?;
 
-        loop {
-            match listener.accept().await {
-                Ok((stream, client_addr)) => {
-                    let middleware_list = Arc::clone(&middleware_list);
-                    let serve = async_h1::accept(stream, move |mut req| {
-                        req.set_peer_addr(Some(client_addr));
-                        Self::serve(Arc::clone(&middleware_list), req)
-                    });
-                    self.executor.spawn(async move {
-                        if let Err(e) = serve.await {
-                            eprintln!("Error when process request: {}", e);
-                        }
-                    });
-                }
-                Err(e) => {
-                    eprintln!("Accept connection error: {}", e);
-                }
-            }
-        }
+        log::info!("Amiya server start listening {:?}", listener.local_addr());
+
+        let executor = Arc::new(self.executor);
+
+        let (tx, rx) = async_channel::bounded::<()>(1);
+        executor.spawn(Self::accepter(listener, Arc::clone(&executor), self.middleware_list, rx));
+        Ok(tx)
     }
 }
 

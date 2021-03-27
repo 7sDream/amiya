@@ -10,6 +10,12 @@ use {
     std::borrow::Cow,
 };
 
+/// Router editing environment.
+///
+/// You don’t need to understand this type, it's here just for list it's function.
+/// See [`Router`] document for api design and usage.
+///
+/// [`Router`]: struct.Router.html
 #[allow(missing_debug_implementations)]
 pub struct RouterSetter<R, Sw, Ex> {
     router: R,
@@ -22,6 +28,7 @@ impl<R, Ex> RouterSetter<R, SetEndpoint, Ex>
 where
     R: RouterLike<Ex>,
 {
+    #[doc(hidden)]
     pub fn new_endpoint_setter(router: R) -> Self {
         Self {
             router,
@@ -36,6 +43,7 @@ impl<R, Ex> RouterSetter<R, SetFallback, Ex>
 where
     R: RouterLike<Ex>,
 {
+    #[doc(hidden)]
     pub fn new_fallback_setter(router: R) -> Self {
         Self {
             router,
@@ -51,6 +59,7 @@ impl<R, Ex> RouterSetter<R, SetTableItem, Ex>
 where
     R: RouterLike<Ex>,
 {
+    #[doc(hidden)]
     pub fn new_router_table_setter<P: Into<Cow<'static, str>>>(router: R, path: P) -> Self {
         Self {
             router,
@@ -62,6 +71,7 @@ where
 
     impl_router_like_pub_fn! { Ex }
 
+    /// Finish this router table editing.
     pub fn done(self) -> R
     where
         Ex: Send + Sync + 'static,
@@ -95,10 +105,12 @@ where
     R: RouterLike<Ex>,
     Ex: Send + Sync + 'static,
 {
+    /// Change to fallback editing environment.
     pub fn fallback(self) -> RouterSetter<RouterSetter<R, SetTableItem, Ex>, SetFallback, Ex> {
         self.router.fallback()
     }
 
+    /// Change to inner router's router table table editing environment.
     #[allow(clippy::type_complexity)] // it's api design, not use this type directly
     pub fn at<P: Into<Cow<'static, str>>>(
         self, path: P,
@@ -110,6 +122,7 @@ where
         self.router.at(path)
     }
 
+    /// Finish setting uses `middleware`.
     pub fn is<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.router.setter.set_to_target(self.router.router, middleware)
     }
@@ -121,12 +134,14 @@ where
     Sw: SetWhich<Ex>,
     Ex: Send + Sync + 'static,
 {
+    /// Finish editing use a method router which accept `method` and uses `middleware`.
     pub fn method<M: Middleware<Ex> + 'static>(self, method: Method, middleware: M) -> R {
         self.setter.set_to_target(self.router, self.method_router.method(method, middleware))
     }
 
     impl_all_http_method! { R }
 
+    /// Finish editing use a middleware.
     pub fn uses<M: Middleware<Ex> + 'static>(self, middleware: M) -> R {
         self.setter.set_to_target(self.router, middleware)
     }

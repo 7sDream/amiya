@@ -50,5 +50,7 @@ fn main() {
 
     let app = amiya::new().uses(router);
 
-    smol::block_on(app.listen("[::]:8080")).unwrap();
+    app.listen("[::]:8080").unwrap();
+
+    std::thread::park();
 }

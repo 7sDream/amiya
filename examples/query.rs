@@ -44,7 +44,9 @@ fn main() {
 
     let app = amiya::new().uses(router);
 
-    smol::block_on(app.listen("[::]:8080")).unwrap();
+    app.listen("[::]:8080").unwrap();
+
+    std::thread::park();
 }
 
 // $ curl 'http://127.0.0.1:8080/object?key=value&arr[]=a1&c=d&arr[]=a2&object[one]=1&object[two]=2'
