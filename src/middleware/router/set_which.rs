@@ -1,4 +1,7 @@
-use {super::RouterLike, crate::Middleware, std::borrow::Cow};
+use {
+    crate::{middleware::router::RouterLike, Middleware},
+    std::borrow::Cow,
+};
 
 pub trait SetWhich<Ex> {
     fn set_to_target<R, M>(self, router: R, middleware: M) -> R

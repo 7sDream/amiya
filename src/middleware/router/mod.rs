@@ -1,6 +1,5 @@
 use {
-    super::Middleware,
-    crate::{Context, Result, StatusCode},
+    crate::{Context, Middleware, Result, StatusCode},
     async_trait::async_trait,
     std::{borrow::Cow, collections::HashMap},
 };
@@ -24,6 +23,7 @@ pub trait RouterLike<Ex>: Sized {
 macro_rules! impl_router_like_pub_fn {
     ($ex: ty) => {
         /// Enter endpoint edit environment.
+        #[must_use]
         pub fn endpoint(
             self,
         ) -> $crate::middleware::router::setter::RouterSetter<
@@ -52,6 +52,7 @@ macro_rules! impl_router_like_pub_fn {
         }
 
         /// Enter fallback edit environment.
+        #[must_use]
         pub fn fallback(
             self,
         ) -> $crate::middleware::router::setter::RouterSetter<
@@ -85,12 +86,12 @@ macro_rules! impl_router_like_pub_fn {
 /// [`Router`] has a `Path => Middleware` table to decided which middleware is respond for a
 /// request.
 ///
-/// Each table item has different path, if you set a path twice, old one will replace the
+/// Each table item has different path, if you set a path twice, the new one will replace the
 /// first.
 ///
 /// Each path, is a full part in path when split by `/`, that is, if you set a item `"abc" =>
-/// middleware A`, the path `/abcde/somesub` will not be treated as a match. Only "/abc", "/abc/",
-/// "/abc/xxxxx/yyyy/zzzz" will.
+/// middleware A`, the path `/abcde/somesub` will not be treated as a match. Only `/abc`, `/abc/`,
+/// `/abc/xxxxx/yyyy/zzzz` will.
 ///
 /// You can use [`at`] method to edit router table, for example: `at("abc")` will start a router
 /// table item edit environment for sub path `/abc`.
@@ -109,7 +110,7 @@ macro_rules! impl_router_like_pub_fn {
 ///
 /// ### Endpoint
 ///
-/// Except router table, each has a endpoint middleware to handler condition that no more remain
+/// Except router table, [`Router`] has a endpoint middleware to handler condition that no more remain
 /// path can be used to determine which table item should be used.
 ///
 /// A example:
@@ -143,13 +144,13 @@ macro_rules! impl_router_like_pub_fn {
 /// will be executed(only if we have set one, of course).
 ///
 /// So if we choose the second option, the fallback is respond to all mismatched item, sometime
-/// this is what you want, and sometime not. Make sure choose the approch meets your need.
+/// this is what you want, and sometime not. Make sure choose the approach meets your need.
 ///
 /// ## API Design
 ///
 /// Because router can be nest, with many many levels, we need many code, many temp vars to build
 /// a multi level router. For reduce some ugly code, we designed a fluent api to construct this
-/// dendritical structure.
+/// tree structure.
 ///
 /// As described above, a [`Router`] has three property:
 ///
@@ -170,17 +171,17 @@ macro_rules! impl_router_like_pub_fn {
 /// When we call [`fallback`] on a router, we do not set the middleware for this property, instead,
 /// we enter the fallback editing environment of this router.
 ///
-/// In a edit environment, we can use serveral method to finish this editing and exit environment.
+/// In a edit environment, we can use several method to finish this editing and exit environment.
 ///
 /// - any method of a [`MethodRouter`] like [`get`], [`post`], [`delete`], etc..
-/// - `uses` medhod of that non-public environment type.
+/// - `uses` method of that non-public environment type.
 ///
-/// A finish method comsumes the environment, set the property of editing target and returns it. So
-/// we can enter other propertie's editing environment to make more changes to it.
+/// A finish method consumes the environment, set the property of editing target and returns it. So
+/// we can enter other properties' editing environment to make more changes to it.
 ///
-/// The [`endpoint`] editing enviorment is almost the same, except it sets the endpint handler.
+/// The [`endpoint`] editing environment is almost the same, except it sets the endpoint handler.
 ///
-/// But [`at`] method has a little difference. It does not enter router table editing environmen of
+/// But [`at`] method has a little difference. It does not enter router table editing environment of
 /// `self`, but enter the [`endpoint`] editing environment of that corresponding router table item's
 /// middleware, a [`Router`] by default.
 ///
@@ -189,7 +190,7 @@ macro_rules! impl_router_like_pub_fn {
 /// custom middleware in that router table item directly.
 ///
 /// And a Router table item's endpoint editing environment also provided `fallback` and `at` method
-/// to enter the default sub Router's editing environment quickly without endpoint be setted.
+/// to enter the default sub Router's editing environment quickly without endpoint be set.
 ///
 /// if we finish set this sub router, a call of `done` method can actually add this item to parent's
 /// router table and returns parent router.
@@ -211,24 +212,24 @@ macro_rules! impl_router_like_pub_fn {
 ///         .get(m!(xxx))
 ///         // | end
 ///         .fallback()  // <-- enter sub router's fallback editing endpoint
-///         // | set sub router's endpoint do not consider HTTP method and use middleware xxx directly
+///         // | set sub router's endpoint to use middleware xxx directly
 ///         // v This method returns the type representing sub router again
 ///         .uses(m!(xxx))
 ///         // | enter sub sub router's endpoint editing environment
 ///         // v
 ///         .at("sub")
-///             .is(m!(xxx))    // `is` make "sub" path directly uses xxx and do not need a router
-///         .done()             // `done` finish "root" router editing and returns the router we created first
+///             .is(m!(xxx))    // `is` make "sub" path directly uses xxx
+///         .done()             // `done` finish "root" router editing
 ///     .at("another")          // we can continue add more item to the Router
 ///         .is(m!(xxx));       // but for short we use a is here and finish router build.
 /// ```
 ///
-/// Evert [`at`] has a matched `done` or `is`, remember this, then you can use this API to build a
+/// Every [`at`] has a matched `done` or `is`, remember this, then you can use this API to build a
 /// router tree without any temp variable.
 ///
-/// Because that `rustfmt` align code using `.`, and all chain method call have same indent.
-/// No indent means no multi level view, no level means we need to be very careful when add
-/// new path to old router. So I recommend use [`#[rustfmt::skip]`][rustfmt::skip] to pervent
+/// Because that `rustfmt` align code using `.`, so all chain method call will have same indent by
+/// default. No indent means no multi level view, no level means we need to be very careful when add
+/// new path to old router. So I recommend use [`#[rustfmt::skip]`][rustfmt::skip] to prevent
 /// `rustfmt` to format the router creating code section and indent router code by hand.
 ///
 /// ## Examples
@@ -298,6 +299,7 @@ impl<Ex> RouterLike<Ex> for Router<Ex> {
 
 impl<Ex> Router<Ex> {
     /// Create new Router middleware.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -333,6 +335,7 @@ where
             if let Some((ref k, ref any)) = self.any {
                 if !path.is_empty() && !path.starts_with('/') {
                     let next_slash = path.find('/');
+                    #[allow(clippy::option_if_let_else)] // use same ctx as mutable
                     let pos = if let Some(pos) = next_slash {
                         ctx.remain_path = &path[pos..];
                         pos

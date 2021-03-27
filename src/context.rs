@@ -32,6 +32,10 @@ where
     ///
     /// A second call to this method on the same instance will do nothing and directly returns a
     /// `Ok(())`.
+    ///
+    /// ## Errors
+    ///
+    /// it returns inner middleware execute result.
     pub async fn next(&mut self) -> Result {
         if let Some((current, tail)) = self.tail.split_first() {
             self.tail = tail;
@@ -64,6 +68,7 @@ where
     ///
     /// [`Router`]: middleware/struct.Router.html
     /// [`examples/router.rs`]: https://github.com/7sDream/amiya/blob/master/examples/router.rs
+    #[must_use]
     pub fn path(&self) -> &str {
         self.remain_path
     }
@@ -81,6 +86,6 @@ where
     /// [Router - Any Item]: middleware/struct.Router.html#any-item
     /// [`examples/arg.rs`]: https://github.com/7sDream/amiya/blob/master/examples/arg.rs
     pub fn arg<K: AsRef<str>>(&self, name: K) -> Option<&str> {
-        self.router_matches.get(name.as_ref()).map(|s| s.as_str())
+        self.router_matches.get(name.as_ref()).map(String::as_str)
     }
 }

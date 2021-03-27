@@ -23,6 +23,6 @@ pub use {
 /// [`examples/measurer.rs`]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 #[async_trait]
 pub trait Middleware<Ex>: Send + Sync {
-    /// You middleware's handler function, it will be called when request reach this middleware
+    /// Your middleware handler function, it will be called when request reach this middleware
     async fn handle(&self, ctx: Context<'_, Ex>) -> Result;
 }

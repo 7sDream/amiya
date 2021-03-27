@@ -8,7 +8,7 @@ use {
     },
 };
 
-static ALL_METHODS: &'static [Method] = &[
+static ALL_METHODS: &[Method] = &[
     Method::Get,
     Method::Head,
     Method::Post,
@@ -139,7 +139,8 @@ impl<Ex> Debug for MethodRouter<Ex> {
 }
 
 impl<Ex> MethodRouter<Ex> {
-    /// Create a new MethodRouter.
+    /// Create a new `MethodRouter`.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }

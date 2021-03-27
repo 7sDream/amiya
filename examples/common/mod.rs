@@ -18,13 +18,13 @@ pub static EXECUTOR: Lazy<Executor> = Lazy::new(|| {
             })
             .expect("cannot spawn executor thread");
     }
-    return ex;
+    ex
 });
 
 pub struct GlobalMultiThreadExecutor;
 
 impl amiya::Executor for GlobalMultiThreadExecutor {
-    fn spawn<T: Send + 'static>(&self, future: impl Future<Output = T> + Send + 'static) -> () {
+    fn spawn<T: Send + 'static>(&self, future: impl Future<Output = T> + Send + 'static) {
         EXECUTOR.spawn(future).detach()
     }
 }

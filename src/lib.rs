@@ -42,7 +42,7 @@
 //! ### [`Middleware`]
 //!
 //! For ease of understanding, you can think this word is a abbreviation of "A function read
-//! some propety of [`Request`] and edit [`Response`]" or, a request handler, for now.
+//! some property of [`Request`] and edit [`Response`]" or, a request handler, for now.
 //!
 //! ### [`Context`]
 //!
@@ -56,7 +56,7 @@
 //!
 //! ![][img-onion-model]
 //!
-//! *We reuse this famous picture from Nodejs' [Koa] framework.*
+//! *We reuse this famous picture from [Python's Pylons framework][Pylons-concept-middleware].*
 //!
 //! If we add middleware A, B and C to Amiya server, the running order(if not interrupted in the
 //! middle) will be: A -> B -> C -> C -> B -> A
@@ -112,20 +112,20 @@
 //! A - after
 //! ```
 //!
-//! You can referer to [`examples/middleware.rs`] for a more meaningful example.
+//! You can referrer to [`examples/middleware.rs`] for a more meaningful example.
 //!
 //! ### Middleware, the truth
 //!
 //! So with the help of [`next`] method, a middleware can not only be a request handler, it can be:
 //!
-//! - a error handler, by catpure inner middleware's return [`Result`]
+//! - a error handler, by capture inner middleware returned [`Result`]
 //! - a [`Router`], by looking the path then delegate [`Context`] to other corresponding middleware
 //! - a access logger or [time measurer], by print log before and after the [`next`] call
 //! - etc...
 //!
-//! A middleware even does not have to call [`next`], in that statution no inner middlewares will
+//! A middleware even does not have to call [`next`], in that situation no inner middleware will
 //! be executed. Middleware like [`Router`] or login state checker can use this mechanism to make
-//! unprocessable requests responsed early.
+//! invalid requests respond early.
 //!
 //! You can create you own [`Middleware`] by implement the trait for your type, or using the [`m`]
 //! macro, see their document for detail.
@@ -137,15 +137,13 @@
 //! ```
 //! use amiya::m;
 //!
-//! fn main() {
-//!     let app = amiya::new().uses(m!(ctx =>
-//!         ctx.resp.set_body(format!("Hello World from: {}", ctx.path()));
-//!     ));
+//! let app = amiya::new().uses(m!(ctx =>
+//!     ctx.resp.set_body(format!("Hello World from: {}", ctx.path()));
+//! ));
 //!
-//!     let fut = app.listen("[::]:8080");
+//! let fut = app.listen("[::]:8080");
 //!
-//!     // ... start a async runtime and block on `fut` ...
-//! }
+//! // ... start a async runtime and block on `fut` ...
 //! ```
 //!
 //! You can await or block on this `fut` to start the service.
@@ -164,7 +162,7 @@
 //! [`smol`]: https://github.com/stjepang/smol
 //! [`async-h1`]: https://github.com/http-rs/async-h1
 //! [img-onion-model]: https://rikka.7sdre.am/files/774eff6f-9368-48d6-8bd2-1b547a74bc23.jpeg
-//! [Koa]: https://github.com/koajs/koa
+//! [Pylons-concept-middleware]: https://docs.pylonsproject.org/projects/pylons-webframework/en/latest/concepts.html#wsgi-middleware
 //! [`examples/middleware.rs`]: https://github.com/7sDream/amiya/blob/master/examples/middleware.rs
 //! [time measurer]: https://github.com/7sDream/amiya/blob/master/examples/measurer.rs
 //! [Readme - Examples]: https://github.com/7sDream/amiya#examples
@@ -180,9 +178,9 @@ mod executor;
 pub mod middleware;
 
 use {
-    executor::SmolGlobalExecutor,
-    smol::net::{AsyncToSocketAddrs, TcpListener},
-    std::{collections::HashMap, fmt::Debug, io, sync::Arc},
+    crate::executor::SmolGlobalExecutor,
+    smol::net::TcpListener,
+    std::{collections::HashMap, io, net::ToSocketAddrs, sync::Arc},
 };
 
 pub use {
@@ -201,6 +199,7 @@ type MiddlewareList<Ex> = Vec<Arc<dyn Middleware<Ex>>>;
 /// Create a [`Amiya`] instance with extra data type `()`.
 ///
 /// [`Amiya`]: struct.Amiya.html
+#[must_use]
 pub fn new() -> Amiya<SmolGlobalExecutor, ()> {
     Amiya::default()
 }
@@ -208,6 +207,7 @@ pub fn new() -> Amiya<SmolGlobalExecutor, ()> {
 /// Create a [`Amiya`] instance with user defined extra data.
 ///
 /// [`Amiya`]: struct.Amiya.html
+#[must_use]
 pub fn with_ex<Ex>() -> Amiya<SmolGlobalExecutor, Ex> {
     Amiya::default()
 }
@@ -238,11 +238,17 @@ impl<Ex> Amiya<SmolGlobalExecutor, Ex> {
     /// Create a [`Amiya`] instance.
     ///
     /// [`Amiya`]: struct.Amiya
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 }
 
+// `executor`'s return type muse use type name `Amiya`, there are some false
+// positive in `clippy:use_self` lint.
+// See: https://rust-lang.github.io/rust-clippy/master/index.html#use_self
+// TODO: remove after this false positive is fixed
+#[allow(clippy::use_self)]
 impl<Exec, Ex> Amiya<Exec, Ex>
 where
     Ex: Send + Sync + 'static,
@@ -334,7 +340,12 @@ where
     /// ```
     /// amiya::new().listen("[::]:8080");
     /// ```
-    pub async fn listen<A: AsyncToSocketAddrs + Debug>(self, addr: A) -> io::Result<()> {
+    ///
+    /// # Errors
+    ///
+    /// When listen provided address and port failed.
+    pub async fn listen<A: ToSocketAddrs + Send + Sync + 'static>(self, addr: A) -> io::Result<()> {
+        let addr = addr.to_socket_addrs()?.next().unwrap();
         let listener = TcpListener::bind(addr).await?;
         let middleware_list = Arc::new(self.middleware_list);
 

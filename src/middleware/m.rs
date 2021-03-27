@@ -32,7 +32,7 @@ where
 
 /// Writer middleware easily.
 ///
-/// It's a macro to let you easily write middleware use closure and syntax like Javascript's
+/// It's a macro to let you easily write middleware use closure and syntax like JavaScript's
 /// arrow function, or convert a async fn to a middleware use the `m!(async_func_name)` syntax.
 ///
 /// It returns a [`M`] instance, which implement [`Middleware`] trait.
@@ -84,7 +84,7 @@ where
 /// let app = amiya::new().uses(m!(ctx => response("Hello World", ctx).await));
 /// ```
 ///
-/// ### Convert  statements to middleware
+/// ### Convert statements to middleware
 ///
 /// Syntax: `<Context parameter name> [: Extra data type] => <statements>`
 ///
@@ -106,7 +106,7 @@ where
 /// [`Middleware`]: middleware/trait.Middleware.html
 #[macro_export]
 macro_rules! m {
-    // Convert a async function to middleware by func's name
+    // Convert a async function to middleware by function name
 
     ($func: ident) => {
         $crate::middleware::M { func: Box::new(|ctx| Box::pin($func(ctx))) }
@@ -136,7 +136,7 @@ macro_rules! m {
         m!($ctx => { $body })
     };
 
-    // Convert stmts
+    // Convert statements
 
     ($ctx: ident : $ex: ty => $($body: tt)+) => {
         m!($ctx: $ex => { $($body)+ ; Ok(()) })

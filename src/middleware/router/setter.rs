@@ -1,9 +1,12 @@
 use {
-    super::{
-        set_which::{SetEndpoint, SetFallback, SetTableItem, SetWhich},
-        MethodRouter, Router, RouterLike,
+    crate::{
+        impl_all_http_method, impl_method, impl_router_like_pub_fn,
+        middleware::router::{
+            set_which::{SetEndpoint, SetFallback, SetTableItem, SetWhich},
+            MethodRouter, Router, RouterLike,
+        },
+        Method, Middleware,
     },
-    crate::{impl_all_http_method, impl_method, impl_router_like_pub_fn, Method, Middleware},
     std::borrow::Cow,
 };
 
@@ -43,6 +46,7 @@ where
     }
 }
 
+#[allow(clippy::use_self)]
 impl<R, Ex> RouterSetter<R, SetTableItem, Ex>
 where
     R: RouterLike<Ex>,
@@ -85,6 +89,7 @@ where
     }
 }
 
+#[allow(clippy::use_self)]
 impl<R, Ex> RouterSetter<RouterSetter<R, SetTableItem, Ex>, SetEndpoint, Ex>
 where
     R: RouterLike<Ex>,
@@ -94,6 +99,7 @@ where
         self.router.fallback()
     }
 
+    #[allow(clippy::type_complexity)] // it's api design, not use this type directly
     pub fn at<P: Into<Cow<'static, str>>>(
         self, path: P,
     ) -> RouterSetter<
