@@ -1,6 +1,6 @@
 # Amiya
 
-[![][github-badge-img]][github-home] [![][doc-badge-img]][doc-home]
+[![Badge with github icon][github-badge-img]][github-home] [![Badge with document icon][doc-badge-img]][doc-home]
 
 Amiya is a experimental middleware-based minimalism async HTTP server framework built up on the
 [`smol`] async runtime.
@@ -29,7 +29,7 @@ now. HTTP 1.0 or 2.0 is not in goal list, at least in the near future.
 
 Performance is **NOT** in the list too, after all, Amiya is just a experimental for now, it uses
 many heap alloc (Box) and dynamic dispatch (Trait Object) so there may be some performance loss
-compare to use `async-h1` directly.
+compare to use [`async-h1`] directly.
 
 ## Examples
 
@@ -51,21 +51,21 @@ fn main() {
 
 You can await or block on this `fut` to start the service.
 
-Notice any future need a async runtime to run, and that's not amiya's goal too. But you can
+Notice any future need a async runtime to run, and that's not goal of Amiya too. But you can
 refer to [`examples/hello.rs`] for a minimal example of how to use [`smol`] runtime.
 
 To run those examples, run
 
 ```bash
-$ cargo run --example # show example list
-$ cargo run --example hello # run hello
+cargo run --example # show example list
+cargo run --example hello # run hello
 ```
 
 Top level document of crate has [a brief description of concepts][doc-concepts] we used in this
 framework, I recommend read it first, and then check those examples to get a more intuitive
 understanding:
 
-- Understand onion model of Amiya's middleware system: [`examples/middleware.rs`]
+- Understand onion model of Amiya middleware system: [`examples/middleware.rs`]
 - Use a custom type as middleware: [`examples/measurer.rs`]
 - Store extra data in context: [`examples/extra.rs`]
 - Use `Router` middleware for request diversion: [`examples/router.rs`]
